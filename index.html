@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宝贝成长指南 - 0-3岁科学育儿手册</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- ECharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-content">
+            <h1>🍼 宝贝成长指南</h1>
+            <p class="subtitle">0-3岁科学育儿实操手册 · 温暖守护每一刻</p>
+            <div class="header-auth">
+                <button id="login-trigger" class="auth-trigger-btn" onclick="openAuthModal()">🔐 登录 / 注册</button>
+                <div id="user-info" class="user-info" style="display:none">
+                    <span class="user-email"></span>
+                    <button class="logout-btn" onclick="signOutUser()">退出</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 登录/注册弹窗 -->
+    <div id="auth-modal" class="auth-modal" style="display:none">
+        <div class="auth-modal-content">
+            <button class="auth-close-btn" onclick="closeAuthModal()">✕</button>
+            <h2 id="auth-modal-title">登录</h2>
+            <p class="auth-subtitle">登录后数据自动云端同步，换设备也不丢失</p>
+            
+            <div id="auth-form-container">
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+                    <div class="form-group">
+                        <label>邮箱地址</label>
+                        <input type="email" id="auth-email" placeholder="请输入邮箱" required>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="auth-password" placeholder="至少6位" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary auth-submit-btn" id="auth-submit-btn">登录</button>
+                </form>
+                
+                <div class="auth-switch">
+                    <span id="auth-switch-text">还没有账号？</span>
+                    <button id="auth-switch-btn" onclick="toggleAuthMode()">注册新账号</button>
+                </div>
+            </div>
+
+            <div id="auth-message" class="auth-message" style="display:none"></div>
+            
+            <!-- 登录成功后的数据迁移提示 -->
+            <div id="migrate-prompt" class="migrate-prompt" style="display:none">
+                <h3>📦 发现本地数据</h3>
+                <p>检测到您的浏览器中有育儿记录数据，是否上传到云端？</p>
+                <div class="migrate-actions">
+                    <button class="btn btn-primary" onclick="handleMigrate(true)">上传到云端</button>
+                    <button class="btn btn-secondary" onclick="handleMigrate(false)">暂不上传</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 首页：月龄选择 -->
+    <main id="home-page" class="page home-page active">
+        <section class="age-selection">
+            <h2 class="section-title">👶 选择宝宝月龄</h2>
+            <div class="age-grid">
+                <div class="age-card" data-age="0-1m">
+                    <div class="age-icon">🌙</div>
+                    <h3>0-1月</h3>
+                    <p>新生儿期</p>
+                </div>
+                <div class="age-card" data-age="1-3m">
+                    <div class="age-icon">👶</div>
+                    <h3>1-3月</h3>
+                    <p>婴儿早期</p>
+                </div>
+                <div class="age-card" data-age="3-6m">
+                    <div class="age-icon">🧸</div>
+                    <h3>3-6月</h3>
+                    <p>微笑宝宝</p>
+                </div>
+                <div class="age-card" data-age="6-12m">
+                    <div class="age-icon">🚶</div>
+                    <h3>6-12月</h3>
+                    <p>学爬学站</p>
+                </div>
+                <div class="age-card" data-age="1-2y">
+                    <div class="age-icon">🎈</div>
+                    <h3>1-2岁</h3>
+                    <p>探索世界</p>
+                </div>
+                <div class="age-card" data-age="2-3y">
+                    <div class="age-icon">🌈</div>
+                    <h3>2-3岁</h3>
+                    <p>活泼好学</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <h2 class="section-title">🛠️ 成长记录工具</h2>
+            <div class="tools-grid">
+                <div class="tool-card milestone" id="go-milestone">
+                    <div class="tool-icon">📊</div>
+                    <h3>发育里程碑</h3>
+                    <p>记录身高体重，生成生长曲线</p>
+                </div>
+                <div class="tool-card observation" id="go-observation">
+                    <div class="tool-icon">📝</div>
+                    <h3>观察手记</h3>
+                    <p>记录成长关键瞬间和时间线</p>
+                </div>
+                <div class="tool-card feeding-record" id="go-feeding-record">
+                    <div class="tool-icon">🍼</div>
+                    <h3>喂养记录</h3>
+                    <p>记录每次喂养，追踪奶量和辅食</p>
+                </div>
+                <div class="tool-card sleep-log" id="go-sleep-log">
+                    <div class="tool-icon">😴</div>
+                    <h3>睡眠日志</h3>
+                    <p>记录睡眠起止，掌握作息规律</p>
+                </div>
+                <div class="tool-card data-manage" id="go-data-manage">
+                    <div class="tool-icon">💾</div>
+                    <h3>数据管理</h3>
+                    <p>导出备份，导入恢复，安全无忧</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="channel-overview">
+            <h2 class="section-title">📚 四大频道导航</h2>
+            <div class="channel-grid">
+                <div class="channel-card feeding" data-channel="feeding">
+                    <div class="channel-icon">🍼</div>
+                    <h3>喂养频道</h3>
+                    <ul>
+                        <li>母乳/配方奶喂养</li>
+                        <li>辅食添加指南</li>
+                        <li>过敏应对</li>
+                        <li>挑食问题</li>
+                    </ul>
+                </div>
+                <div class="channel-card health" data-channel="health">
+                    <div class="channel-icon">💊</div>
+                    <h3>健康频道</h3>
+                    <ul>
+                        <li>疫苗接种时间表</li>
+                        <li>常见病护理</li>
+                        <li>发育里程碑</li>
+                        <li>安全急救</li>
+                    </ul>
+                </div>
+                <div class="channel-card education" data-channel="education">
+                    <div class="channel-icon">📖</div>
+                    <h3>早教频道</h3>
+                    <ul>
+                        <li>分龄游戏推荐</li>
+                        <li>语言启蒙方案</li>
+                        <li>精细动作训练</li>
+                        <li>情绪社交发展</li>
+                    </ul>
+                </div>
+                <div class="channel-card care" data-channel="care">
+                    <div class="channel-icon">🛁</div>
+                    <h3>护理频道</h3>
+                    <ul>
+                        <li>睡眠管理</li>
+                        <li>洗澡与皮肤护理</li>
+                        <li>日常护肤要点</li>
+                        <li>习惯养成</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 内容页面：月龄+频道 -->
+    <main id="content-page" class="page content-page">
+        <div class="content-wrapper">
+            <aside class="channel-tabs">
+                <button class="back-btn" id="back-btn">← 返回首页</button>
+                <h3 class="current-age" id="current-age-title">0-1月</h3>
+                <nav class="tabs-nav">
+                    <button class="tab-btn active" data-channel="feeding">
+                        <span class="tab-icon">🍼</span>
+                        <span class="tab-name">喂养</span>
+                    </button>
+                    <button class="tab-btn" data-channel="health">
+                        <span class="tab-icon">💊</span>
+                        <span class="tab-name">健康</span>
+                    </button>
+                    <button class="tab-btn" data-channel="education">
+                        <span class="tab-icon">📖</span>
+                        <span class="tab-name">早教</span>
+                    </button>
+                    <button class="tab-btn" data-channel="care">
+                        <span class="tab-icon">🛁</span>
+                        <span class="tab-name">护理</span>
+                    </button>
+                </nav>
+            </aside>
+            <section class="content-area" id="content-area"></section>
+        </div>
+    </main>
+
+    <!-- 发育里程碑页面 -->
+    <main id="milestone-page" class="page milestone-page">
+        <div class="content-wrapper">
+            <aside class="channel-tabs">
+                <button class="back-btn" id="back-from-milestone">← 返回首页</button>
+                <h3 class="current-age">📊 发育里程碑</h3>
+                <nav class="tabs-nav">
+                    <button class="tab-btn active" data-mtab="record">
+                        <span class="tab-icon">✏️</span>
+                        <span class="tab-name">记录数据</span>
+                    </button>
+                    <button class="tab-btn" data-mtab="chart">
+                        <span class="tab-icon">📈</span>
+                        <span class="tab-name">生长曲线</span>
+                    </button>
+                </nav>
+            </aside>
+            <section class="content-area" id="milestone-content"></section>
+        </div>
+    </main>
+
+    <!-- 观察手记页面 -->
+    <main id="observation-page" class="page observation-page">
+        <div class="content-wrapper">
+            <aside class="channel-tabs">
+                <button class="back-btn" id="back-from-observation">← 返回首页</button>
+                <h3 class="current-age">📝 观察手记</h3>
+                <nav class="tabs-nav">
+                    <button class="tab-btn active" data-otab="timeline">
+                        <span class="tab-icon">📅</span>
+                        <span class="tab-name">时间线</span>
+                    </button>
+                    <button class="tab-btn" data-otab="add">
+                        <span class="tab-icon">➕</span>
+                        <span class="tab-name">添加记录</span>
+                    </button>
+                </nav>
+            </aside>
+            <section class="content-area" id="observation-content"></section>
+        </div>
+    </main>
+
+    <!-- 喂养记录页面 -->
+    <main id="feeding-record-page" class="page feeding-record-page">
+        <div class="content-wrapper">
+            <aside class="channel-tabs">
+                <button class="back-btn" id="back-from-feeding-record">← 返回首页</button>
+                <h3 class="current-age">🍼 喂养记录</h3>
+                <nav class="tabs-nav">
+                    <button class="tab-btn active" data-frtab="record">
+                        <span class="tab-icon">✏️</span>
+                        <span class="tab-name">记录喂养</span>
+                    </button>
+                    <button class="tab-btn" data-frtab="stats">
+                        <span class="tab-icon">📊</span>
+                        <span class="tab-name">喂养统计</span>
+                    </button>
+                </nav>
+            </aside>
+            <section class="content-area" id="feeding-record-content"></section>
+        </div>
+    </main>
+
+    <!-- 睡眠日志页面 -->
+    <main id="sleep-log-page" class="page sleep-log-page">
+        <div class="content-wrapper">
+            <aside class="channel-tabs">
+                <button class="back-btn" id="back-from-sleep-log">← 返回首页</button>
+                <h3 class="current-age">😴 睡眠日志</h3>
+                <nav class="tabs-nav">
+                    <button class="tab-btn active" data-sltab="record">
+                        <span class="tab-icon">✏️</span>
+                        <span class="tab-name">睡眠记录</span>
+                    </button>
+                    <button class="tab-btn" data-sltab="stats">
+                        <span class="tab-icon">📊</span>
+                        <span class="tab-name">睡眠统计</span>
+                    </button>
+                </nav>
+            </aside>
+            <section class="content-area" id="sleep-log-content"></section>
+        </div>
+    </main>
+
+    <!-- 数据管理页面 -->
+    <main id="data-manage-page" class="page data-manage-page">
+        <div class="content-wrapper">
+            <aside class="channel-tabs">
+                <button class="back-btn" id="back-from-data-manage">← 返回首页</button>
+                <h3 class="current-age">💾 数据管理</h3>
+                <nav class="tabs-nav">
+                    <button class="tab-btn active" data-dmtab="export">
+                        <span class="tab-icon">📤</span>
+                        <span class="tab-name">导出备份</span>
+                    </button>
+                    <button class="tab-btn" data-dmtab="import">
+                        <span class="tab-icon">📥</span>
+                        <span class="tab-name">导入恢复</span>
+                    </button>
+                </nav>
+            </aside>
+            <section class="content-area" id="data-manage-content"></section>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <p>📖 内容参考：《美国儿科协会育儿百科》、中国卫健委《0-6岁儿童健康管理服务规范》</p>
+        <p class="disclaimer">⚠️ 本指南仅供参考，具体养育问题请咨询专业儿科医生</p>
+    </footer>
+
+    <script src="content.js"></script>
+    <script src="supabase-auth.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
