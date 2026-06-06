@@ -813,30 +813,76 @@ const contentData = {
             title: "0-1月龄 · 健康指南",
             cards: [
                 {
-                    id: "vaccine",
+                    id: "vaccine-birth",
                     icon: "💉",
-                    title: "疫苗接种",
+                    title: "出生时疫苗 · 乙肝疫苗与卡介苗",
                     content: `
-                        <h4>出生时（医院）</h4>
-                        <ul>
-                            <li><strong>乙肝疫苗（第1剂）</strong>：出生后24小时内</li>
-                            <li><strong>卡介苗</strong>：出生后24小时后，体重≥2500g</li>
-                        </ul>
-                        
-                        <h4>接种后观察</h4>
-                        <ul>
-                            <li>观察30分钟，无异常再离开</li>
-                            <li>卡介苗2-4周后局部红肿→化脓→结痂，属正常反应</li>
-                            <li>保持接种部位干燥清洁</li>
-                        </ul>
-                        
-                        <div class="warning-box">
-                            发热≥38.5℃、持续哭闹、局部红肿加重需就医。
+                        <h4>乙肝疫苗（第1剂）</h4>
+                        <div class="vaccine-card">
+                            <p><strong>接种时间：</strong>出生后24小时内</p>
+                            <p><strong>接种部位：</strong>上臂外侧三角肌肌内注射</p>
+                            <p><strong>剂量：</strong>10μg或20μg（酵母型）</p>
                         </div>
+                        
+                        <h4>乙肝疫苗全程程序</h4>
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <h4>第1剂 · 出生时</h4>
+                                <p>出生24小时内接种，越早越好，可有效阻断母婴传播</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第2剂 · 1月龄</h4>
+                                <p>满月后接种，在正规接种单位完成</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第3剂 · 6月龄</h4>
+                                <p>完成基础免疫，全程接种后保护率可达95%以上</p>
+                            </div>
+                        </div>
+                        
+                        <h4>乙肝疫苗的作用</h4>
+                        <p>乙肝疫苗用于预防乙型肝炎病毒（HBV）感染。乙肝是我国重点防控的乙类传染病，可通过母婴、血液和性接触传播。感染后可能发展为慢性肝炎、肝硬化甚至肝癌。</p>
+                        
+                        <h4>接种禁忌</h4>
+                        <ul>
+                            <li>已知对乙肝疫苗任何成分过敏者</li>
+                            <li>患急性疾病、严重慢性疾病、慢性疾病急性发作期</li>
+                            <li>发热者暂缓接种</li>
+                        </ul>
+                        
+                        <h4>接种后反应</h4>
+                        <ul>
+                            <li>局部红肿、疼痛（一般2-3天自行消退）</li>
+                            <li>低热（体温<38.5℃）</li>
+                            <li>无需特殊处理，注意观察即可</li>
+                        </ul>
+                        
+                        <h4>卡介苗（BCG）</h4>
+                        <div class="vaccine-card">
+                            <p><strong>接种时间：</strong>出生后24小时-1个月内</p>
+                            <p><strong>接种部位：</strong>上臂外侧三角肌皮内注射</p>
+                            <p><strong>剂量：</strong>0.1ml</p>
+                        </div>
+                        
+                        <h4>卡介苗的作用</h4>
+                        <p>预防儿童结核性脑膜炎和粟粒性肺结核。结核病通过呼吸道传播，我国是结核病高负担国家，早期接种可为宝宝建立基础防护。</p>
+                        
+                        <h4>正常接种反应</h4>
+                        <div class="warning-box">
+                            <strong>这是正常的！</strong>接种后2-4周局部出现红肿→硬结→化脓→破溃→结痂，是卡介苗的正常反应过程，切忌挤压、消毒或包扎，通常6-8周自行愈合。
+                        </div>
+                        
+                        <h4>卡介苗补种原则</h4>
+                        <ul>
+                            <li>早产儿（体重<2500g）：待体重达标后补种</li>
+                            <li>出生时未接种：3月龄内可直接补种</li>
+                            <li>超过3月龄：需先做结核菌素试验（PPD）阴性后方可补种</li>
+                        </ul>
                         
                         <div class="tip-box">
-                            出生后尽快办理儿童预防接种证，按时预约接种。
+                            接种后请妥善保管《儿童预防接种证》，这是宝宝入托、入学、出国的必备证件。
                         </div>
+                        <p class="source-ref">参考：国家免疫规划疫苗免疫程序（2025版）</p>
                     `
                 },
                 {
@@ -1006,31 +1052,53 @@ const contentData = {
             title: "1-3月龄 · 健康指南",
             cards: [
                 {
-                    id: "vaccine",
+                    id: "vaccine-polio-dpt",
                     icon: "💉",
-                    title: "疫苗接种时间表",
+                    title: "脊灰疫苗 · 脊髓灰质炎的克星",
                     content: `
-                        <h4>1-3月龄接种疫苗</h4>
+                        <h4>脊髓灰质炎（小儿麻痹症）</h4>
+                        <p>是由脊髓灰质炎病毒引起的急性传染病，主要侵犯脊髓前角运动神经元，导致肢体松弛性麻痹，严重者可因呼吸肌麻痹致命。接种疫苗是唯一有效的预防手段。</p>
+                        
+                        <h4>脊灰疫苗接种程序（2025版）</h4>
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <h4>第1剂 · 2月龄</h4>
+                                <p>脊灰灭活疫苗（IPV）· 肌内注射</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第2剂 · 3月龄</h4>
+                                <p>脊灰灭活疫苗（IPV）· 肌内注射</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第3剂 · 4月龄</h4>
+                                <p>脊灰减毒活疫苗（bOPV）· 口服滴剂</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第4剂 · 4周岁</h4>
+                                <p>脊灰减毒活疫苗（bOPV）· 口服滴剂</p>
+                            </div>
+                        </div>
+                        
+                        <h4>灭活疫苗（IPV）vs 减毒活疫苗（OPV）</h4>
                         <div class="table-wrapper">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>月龄</th>
-                                        <th>疫苗</th>
+                                        <th>类型</th>
+                                        <th>优点</th>
+                                        <th>注意事项</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>1月龄</td>
-                                        <td>乙肝疫苗（第2剂）</td>
+                                        <td>IPV（灭活）</td>
+                                        <td>安全性高，无疫苗相关麻痹风险</td>
+                                        <td>需注射接种</td>
                                     </tr>
                                     <tr>
-                                        <td>2月龄</td>
-                                        <td>脊灰灭活疫苗（第1剂）</td>
-                                    </tr>
-                                    <tr>
-                                        <td>3月龄</td>
-                                        <td>脊灰灭活疫苗（第2剂）+ 百白破（第1剂）</td>
+                                        <td>bOPV（减毒）</td>
+                                        <td>口服方便，黏膜免疫好</td>
+                                        <td>极罕见疫苗相关麻痹风险（约1/250万）</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1038,14 +1106,104 @@ const contentData = {
                         
                         <h4>接种注意事项</h4>
                         <ul>
-                            <li>脊灰疫苗后30分钟方可进食</li>
-                            <li>百白破可能出现低热、局部红肿</li>
-                            <li>如有不适，及时就医</li>
+                            <li>口服OPV前后30分钟避免进食、饮水</li>
+                            <li>口服OPV用凉开水送服，禁用热水</li>
+                            <li>接种后30分钟内避免剧烈哭闹、呕吐</li>
+                        </ul>
+                        
+                        <h4>接种后反应</h4>
+                        <ul>
+                            <li>IPV注射部位红肿、疼痛，一般2-3天消退</li>
+                            <li>OPV可能出现轻微腹泻，无需特殊处理</li>
                         </ul>
                         
                         <div class="tip-box">
-                            接种后多休息、多喝水，暂不添加新辅食。
+                            我国已实现无脊髓灰质炎目标，但周边国家仍有流行，保持高接种率才能持续巩固成果。
                         </div>
+                    `
+                },
+                {
+                    id: "vaccine-dpt",
+                    icon: "💉",
+                    title: "百白破疫苗 · 三病同防",
+                    content: `
+                        <h4>百白破疫苗能预防什么？</h4>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>疾病</th>
+                                        <th>危害</th>
+                                        <th>传播方式</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>百日咳</strong></td>
+                                        <td>剧烈咳嗽，婴儿可致呼吸暂停、肺炎、脑病</td>
+                                        <td>飞沫传播</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>白喉</strong></td>
+                                        <td>咽喉部假膜，阻塞呼吸道，可致窒息</td>
+                                        <td>飞沫传播</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>破伤风</strong></td>
+                                        <td>肌肉强直性痉挛，重者呼吸衰竭</td>
+                                        <td>伤口感染</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <h4>百白破疫苗接种程序（2025年新版·5剂次）</h4>
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <h4>第1剂 · 2月龄</h4>
+                                <p>基础免疫第一针</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第2剂 · 4月龄</h4>
+                                <p>基础免疫第二针</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第3剂 · 6月龄</h4>
+                                <p>基础免疫第三针</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第4剂 · 18月龄</h4>
+                                <p>加强免疫（2025年新增）</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第5剂 · 6周岁</h4>
+                                <p>百白破加强针（替代原白破疫苗）</p>
+                            </div>
+                        </div>
+                        
+                        <div class="warning-box">
+                            <strong>2025年新变化：</strong>百白破疫苗由4剂次调整为5剂次，新增18月龄和6周岁各1剂加强针，进一步巩固儿童防护。
+                        </div>
+                        
+                        <h4>接种后常见反应</h4>
+                        <ul>
+                            <li>注射部位红肿、硬结（1-2周内常见）</li>
+                            <li>低至中等度发热</li>
+                            <li>烦躁、哭闹</li>
+                        </ul>
+                        
+                        <h4>接种后护理</h4>
+                        <ul>
+                            <li>红肿处24小时内冷敷，24小时后热敷</li>
+                            <li>多喝水、休息</li>
+                            <li>体温>38.5℃可用退热药</li>
+                        </ul>
+                        
+                        <div class="warning-box">
+                            注射后出现严重过敏反应（荨麻疹、呼吸困难等）需立即就医。
+                        </div>
+                        
+                        <p class="source-ref">参考：国家免疫规划疫苗免疫程序（2025版）</p>
                     `
                 },
                 {
@@ -1188,38 +1346,124 @@ const contentData = {
             title: "3-6月龄 · 健康指南",
             cards: [
                 {
-                    id: "vaccine",
+                    id: "vaccine-meningitis",
                     icon: "💉",
-                    title: "疫苗接种时间表",
+                    title: "流脑疫苗 · 预防流行性脑脊髓膜炎",
                     content: `
-                        <h4>3-6月龄接种疫苗</h4>
+                        <h4>什么是流行性脑脊髓膜炎？</h4>
+                        <p>简称"流脑"，是由脑膜炎奈瑟菌引起的急性化脓性脑膜炎。可通过飞沫传播，冬春季高发。6月龄-2岁婴幼儿是高危人群，主要表现为高热、剧烈头痛、喷射性呕吐、皮肤瘀点瘀斑，暴发型可于24小时内危及生命。</p>
+                        
+                        <h4>流脑疫苗接种程序</h4>
                         <div class="table-wrapper">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>月龄</th>
-                                        <th>疫苗</th>
+                                        <th>疫苗类型</th>
+                                        <th>接种时间</th>
+                                        <th>预防血清群</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>4月龄</td>
-                                        <td>脊灰灭活（第3剂）+ 百白破（第2剂）</td>
+                                        <td>A群流脑多糖疫苗</td>
+                                        <td>6月龄、9月龄</td>
+                                        <td>A群</td>
                                     </tr>
                                     <tr>
-                                        <td>5月龄</td>
-                                        <td>百白破（第3剂）</td>
-                                    </tr>
-                                    <tr>
-                                        <td>6月龄</td>
-                                        <td>乙肝（第3剂）+ A群流脑（第1剂）</td>
+                                        <td>A+C群流脑多糖疫苗</td>
+                                        <td>3周岁、6周岁</td>
+                                        <td>A群、C群</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         
+                        <h4>2026年新选择：四价流脑结合疫苗</h4>
+                        <p>2026年四价流脑结合疫苗扩龄至6岁，可替代传统多糖疫苗，提供更广泛的防护：</p>
+                        <ul>
+                            <li>覆盖A、C、Y、W135四种血清群</li>
+                            <li>结合疫苗免疫效果更持久</li>
+                            <li>适合有条件的家庭选择</li>
+                        </ul>
+                        
+                        <h4>接种后反应</h4>
+                        <ul>
+                            <li>注射部位红肿、疼痛</li>
+                            <li>低热、烦躁</li>
+                            <li>一般2-3天自行消退</li>
+                        </ul>
+                        
+                        <h4>A群流脑疫苗补种</h4>
+                        <ul>
+                            <li>两针间隔不少于3个月</li>
+                            <li>如错过接种时间，尽早补种</li>
+                        </ul>
+                        
+                        <div class="tip-box">
+                            6月龄是宝宝开始接种流脑疫苗的时间，记得按时预约！
+                        </div>
+                        <p class="source-ref">参考：国家免疫规划疫苗免疫程序（2025版）</p>
+                    `
+                },
+                {
+                    id: "vaccine-self-pay",
+                    icon: "💰",
+                    title: "推荐自费疫苗 · 6月龄起可接种",
+                    content: `
+                        <h4>为什么要接种自费疫苗？</h4>
+                        <p>自费疫苗（非免疫规划疫苗）是免费疫苗的重要补充，能预防更多高发、高危害疾病。随着国家经济发展，越来越多的自费疫苗正在纳入免费范围。</p>
+                        
+                        <h4>推荐优先接种的自费疫苗</h4>
+                        
+                        <div class="vaccine-card">
+                            <h4>🛡️ 13价肺炎球菌疫苗（PCV13）</h4>
+                            <p><strong>接种程序：</strong>2、4、6月龄基础免疫，12-15月龄加强免疫（共4剂）</p>
+                            <p><strong>预防疾病：</strong>肺炎球菌引起的肺炎、脑膜炎、中耳炎、菌血症等</p>
+                            <p><strong>推荐理由：</strong>WHO最优先推荐的儿童疫苗之一，肺炎是我国5岁以下儿童死亡主要原因</p>
+                            <p><strong>费用参考：</strong>约700-800元/剂</p>
+                        </div>
+                        
+                        <div class="vaccine-card">
+                            <h4>🦠 EV71手足口病疫苗</h4>
+                            <p><strong>接种程序：</strong>6月龄起接种，2剂间隔1个月</p>
+                            <p><strong>预防疾病：</strong>EV71病毒引起的手足口病（尤其是重症）</p>
+                            <p><strong>推荐理由：</strong>EV71是重症手足口病的主要病原体，接种后可显著降低重症风险</p>
+                            <p><strong>费用参考：</strong>约200-300元/剂</p>
+                        </div>
+                        
+                        <div class="vaccine-card">
+                            <h4>🦷 轮状病毒疫苗（RV）</h4>
+                            <p><strong>接种程序：</strong>6周龄起口服，全程2-3剂（视厂家）</p>
+                            <p><strong>预防疾病：</strong>轮状病毒引起的秋季腹泻、呕吐、脱水</p>
+                            <p><strong>推荐理由：</strong>轮状病毒感染是婴幼儿急性胃肠炎的主要原因，6月龄-2岁高发</p>
+                            <p><strong>费用参考：</strong>约150-300元/剂</p>
+                        </div>
+                        
+                        <div class="vaccine-card">
+                            <h4>💉 Hib疫苗（b型流感嗜血杆菌疫苗）</h4>
+                            <p><strong>接种程序：</strong>2、4、6月龄基础免疫，12-15月龄加强（共4剂）</p>
+                            <p><strong>预防疾病：</strong>Hib引起的肺炎、脑膜炎、会厌炎等</p>
+                            <p><strong>推荐理由：</strong>WHO最推荐的疫苗之一，我国抗生素耐药问题严重，预防尤为重要</p>
+                            <p><strong>费用参考：</strong>约100-150元/剂</p>
+                        </div>
+                        
+                        <div class="vaccine-card">
+                            <h4>💉 五联疫苗（百白破+脊灰+Hib）</h4>
+                            <p><strong>接种程序：</strong>2、3、4月龄基础，18月龄加强（共4剂）</p>
+                            <p><strong>优势：</strong>一针防五种病，减少8次接种，减少宝宝痛苦</p>
+                            <p><strong>适合：</strong>希望减少接种次数的家庭</p>
+                            <p><strong>费用参考：</strong>约600-800元/剂</p>
+                        </div>
+                        
                         <h4>流感疫苗</h4>
-                        <p>6月龄以上可接种流感疫苗，每年秋季接种。</p>
+                        <p><strong>接种时间：</strong>6月龄起，每年秋季接种</p>
+                        <p><strong>接种方案：</strong>首次接种需2剂（间隔4周），之后每年1剂</p>
+                        <p><strong>推荐理由：</strong>儿童是流感高危人群，接种流感疫苗可降低重症风险</p>
+                        
+                        <div class="tip-box">
+                            <strong>疫苗选择建议：</strong>根据家庭经济情况和宝宝健康状况选择。国产与进口疫苗安全性和有效性无实质差异，不必盲目追求进口。
+                        </div>
+                        <p class="source-ref">参考：中国疾控中心、WHO儿童疫苗立场文件</p>
                     `
                 },
                 {
@@ -1661,38 +1905,109 @@ const contentData = {
             title: "1-2岁 · 健康指南",
             cards: [
                 {
-                    id: "vaccine",
+                    id: "vaccine-measles-je",
                     icon: "💉",
-                    title: "疫苗接种时间表",
+                    title: "麻腮风疫苗 · 乙脑疫苗",
                     content: `
-                        <h4>1-2岁接种疫苗</h4>
+                        <h4>麻腮风疫苗（MMR）· 一针防三病</h4>
+                        <p>麻腮风疫苗可同时预防麻疹、流行性腮腺炎和风疹三种传染病。</p>
+                        
                         <div class="table-wrapper">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>月龄</th>
-                                        <th>疫苗</th>
+                                        <th>疾病</th>
+                                        <th>主要症状</th>
+                                        <th>危害</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>12月龄</td>
-                                        <td>水痘（第1剂）+ 乙脑（第2剂）</td>
+                                        <td><strong>麻疹</strong></td>
+                                        <td>高热、咳嗽、眼结膜炎、全身红疹</td>
+                                        <td>可并发肺炎、脑炎，重症可致死亡</td>
                                     </tr>
                                     <tr>
-                                        <td>18月龄</td>
-                                        <td>麻腮风（第2剂）+ 甲肝灭活（第1剂）+ 百白破（第4剂）</td>
+                                        <td><strong>流行性腮腺炎</strong></td>
+                                        <td>腮腺肿大、疼痛、发热</td>
+                                        <td>可并发睾丸炎、脑膜炎、耳聋</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>风疹</strong></td>
+                                        <td>低热、淋巴结肿大、全身红疹</td>
+                                        <td>孕妇感染可致胎儿畸形</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         
-                        <h4>肺炎疫苗补种</h4>
-                        <p>如之前未完成，1岁后仍可补种13价肺炎疫苗。</p>
+                        <h4>麻腮风疫苗接种程序</h4>
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <h4>第1剂 · 8月龄</h4>
+                                <p>满8月龄后尽早接种</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第2剂 · 18月龄</h4>
+                                <p>麻腮风加强针</p>
+                            </div>
+                        </div>
+                        
+                        <h4>接种后常见反应</h4>
+                        <div class="warning-box">
+                            <strong>重点关注：</strong>麻腮风疫苗是所有疫苗中反应较大的，通常在接种后7-12天出现发热、皮疹，持续1-2天。这是正常反应，不代表接种失败。
+                        </div>
+                        <ul>
+                            <li>发热（多在接种后7-12天）</li>
+                            <li>皮疹（散在淡红色丘疹）</li>
+                            <li>腮腺肿大（少见）</li>
+                            <li>注射部位红肿</li>
+                        </ul>
+                        
+                        <h4>乙脑疫苗（JEV）· 预防流行性乙型脑炎</h4>
+                        <p>乙脑是由乙型脑炎病毒引起的脑实质炎症，通过蚊虫叮咬传播，夏秋季高发，可导致高热、意识障碍、抽搐，重症可留后遗症。</p>
+                        
+                        <h4>乙脑疫苗接种程序</h4>
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <h4>第1剂 · 8月龄</h4>
+                                <p>乙脑减毒活疫苗（JE-L）</p>
+                            </div>
+                            <div class="timeline-item">
+                                <h4>第2剂 · 2周岁</h4>
+                                <p>乙脑减毒活疫苗加强</p>
+                            </div>
+                        </div>
+                        
+                        <h4>乙脑疫苗选择</h4>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>类型</th>
+                                        <th>接种程序</th>
+                                        <th>特点</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>乙脑减毒活疫苗</td>
+                                        <td>8月龄、2岁各1剂</td>
+                                        <td>免费，只需2剂，免疫效果好</td>
+                                    </tr>
+                                    <tr>
+                                        <td>乙脑灭活疫苗</td>
+                                        <td>8月龄2剂、2岁1剂、6岁1剂</td>
+                                        <td>共4剂，适合禁忌症儿童</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         
                         <div class="tip-box">
-                            1岁体检记得同时接种疫苗，提前预约。
+                            8月龄是疫苗接种密集期，记得同时预约麻腮风和乙脑疫苗！
                         </div>
+                        <p class="source-ref">参考：国家免疫规划疫苗免疫程序（2025版）</p>
                     `
                 },
                 {
@@ -1914,11 +2229,11 @@ const contentData = {
             title: "2-3岁 · 健康指南",
             cards: [
                 {
-                    id: "vaccine",
+                    id: "vaccine-preschool",
                     icon: "💉",
-                    title: "疫苗接种时间表",
+                    title: "入园前疫苗 · 完整接种清单",
                     content: `
-                        <h4>2-3岁接种疫苗</h4>
+                        <h4>2-3岁疫苗接种</h4>
                         <div class="table-wrapper">
                             <table>
                                 <thead>
@@ -1928,28 +2243,46 @@ const contentData = {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>2岁</td>
-                                        <td>甲肝灭活（第2剂，与第1剂间隔6个月）</td>
-                                    </tr>
-                                    <tr>
-                                        <td>2-2.5岁</td>
-                                        <td>乙脑减毒（第2剂）</td>
-                                    </tr>
-                                    <tr>
-                                        <td>3岁</td>
-                                        <td>流脑AC多糖（第1剂）</td>
-                                    </tr>
+                                    <tr><td>2岁</td><td>甲肝灭活疫苗（第2剂）、乙脑疫苗（第2剂）</td></tr>
+                                    <tr><td>3岁</td><td>A+C群流脑多糖疫苗（第1剂）</td></tr>
+                                    <tr><td>4岁</td><td>脊灰减毒活疫苗（加强）、水痘疫苗（第2剂）</td></tr>
+                                    <tr><td>6岁</td><td>百白破（第5剂）、A+C群流脑多糖（第2剂）</td></tr>
                                 </tbody>
                             </table>
                         </div>
                         
-                        <h4>流感疫苗</h4>
-                        <p>每年秋季接种，6月龄-8岁首次接种需2剂。</p>
+                        <h4>流感疫苗每年接种</h4>
+                        <p>每年秋季（9-11月）接种流感疫苗，6月龄-8岁首次接种需2剂（间隔4周），之后每年1剂。</p>
+                        
+                        <h4>入园入学查验接种证</h4>
+                        <div class="warning-box">
+                            <strong>重要提醒：</strong>根据国家规定，儿童在入托、入园、入学时，托幼机构和学校需查验预防接种证。如有漏种疫苗，需补种后才能入学。
+                        </div>
+                        
+                        <h4>入园前请确认完成以下疫苗</h4>
+                        <ul>
+                            <li>✅ 乙肝疫苗（3剂）</li>
+                            <li>✅ 卡介苗（1剂）</li>
+                            <li>✅ 脊灰疫苗（4剂）</li>
+                            <li>✅ 百白破疫苗（4剂）</li>
+                            <li>✅ 麻腮风疫苗（2剂）</li>
+                            <li>✅ A群流脑疫苗（2剂）</li>
+                            <li>✅ 乙脑疫苗（2剂）</li>
+                            <li>✅ 甲肝疫苗（1剂）</li>
+                        </ul>
+                        
+                        <h4>如需补种怎么办</h4>
+                        <ul>
+                            <li>带上预防接种证到社区卫生服务中心</li>
+                            <li>医生会根据情况安排补种</li>
+                            <li>漏种疫苗不影响已接种疫苗的效果</li>
+                            <li>尽快补种，拖延太久可能影响入园入学</li>
+                        </ul>
                         
                         <div class="tip-box">
-                            入园前确认疫苗接种完成，补种遗漏疫苗。
+                            妥善保管预防接种证！外借、丢失都会造成麻烦。有些地方提供电子接种证，可在"小豆苗"等APP上关联。
                         </div>
+                        <p class="source-ref">参考：国家免疫规划疫苗免疫程序（2025版）、《疫苗流通和接种管理条例》</p>
                     `
                 },
                 {
