@@ -1,7 +1,8 @@
-// ===== 育儿指南网站应用逻辑 =====
+// ===== 育儿指南网站应用逻辑 v2.0 =====
+// 包含：返回键优化、月龄限制、搜索、筛选、手机端优化
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 状态管理
+    // ===== 状态管理 =====
     let currentAge = null;
     let currentChannel = 'feeding';
     let currentMilestoneTab = 'record';
@@ -10,7 +11,21 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentSleepLogTab = 'record';
     let currentDataManageTab = 'export';
     
-    // DOM元素
+    // ===== 页面导航栈（返回键优化） =====
+    let pageStack = [];
+    const MAX_STACK_SIZE = 20;
+    
+    // 四大频道（月龄限制）
+    const restrictedChannels = ['milestone', 'observation', 'feeding-record', 'sleep-log'];
+    
+    // 搜索和筛选状态
+    let searchQuery = '';
+    let activeFilters = new Set();
+    
+    // 所有可用标签
+    const allTags = ['辅食', '睡眠', '安全', '早教', '疫苗', '疾病', '护理', '心理', '运动', '语言'];
+    
+    // ===== DOM元素 =====
     const homePage = document.getElementById('home-page');
     const contentPage = document.getElementById('content-page');
     const milestonePage = document.getElementById('milestone-page');
@@ -42,14 +57,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const goSleepLog = document.getElementById('go-sleep-log');
     const goDataManage = document.getElementById('go-data-manage');
     
-    // 月龄标题映射
+    // ===== 月龄标题映射 =====
     const ageTitles = {
         '0-1m': '0-1月龄',
         '1-3m': '1-3月龄',
         '3-6m': '3-6月龄',
         '6-12m': '6-12月龄',
         '1-2y': '1-2岁',
-        '2-3y': '2-3岁'
+        '2-3y': '2-3y'
     };
     
     // 频道标题映射
@@ -75,6 +90,65 @@ document.addEventListener('DOMContentLoaded', function() {
         bad: { name: '睡不好', icon: '😔' }
     };
     
+    // ===== 页面导航栈操作 =====
+    function pushToStack(pageType, data) {
+        if (pageStack.length >= MAX_STACK_SIZE) {
+            pageStack.shift(); // 超过最大容量，移除最早的
+        }
+        pageStack.push({
+            type: pageType,
+            data: data,
+            timestamp: Date.now()
+        });
+    }
+    
+    function popFromStack() {
+        return pageStack.pop();
+    }
+    
+    function clearStack() {
+        pageStack = [];
+    }
+    
+    // ===== 浏览器返回键监听 =====
+    window.addEventListener('popstate', function(e) {
+        if (pageStack.length > 0) {
+            const prevPage = popFromStack();
+            if (prevPage) {
+                navigateBack(prevPage);
+            }
+        } else {
+            showHomePage();
+        }
+    });
+    
+    function navigateBack(prevPage) {
+        switch(prevPage.type) {
+            case 'content':
+                currentAge = prevPage.data.age;
+                currentChannel = prevPage.data.channel;
+                showContentPageDirect();
+                break;
+            case 'milestone':
+                showMilestonePageDirect();
+                break;
+            case 'observation':
+                showObservationPageDirect();
+                break;
+            case 'feeding-record':
+                showFeedingRecordPageDirect();
+                break;
+            case 'sleep-log':
+                showSleepLogPageDirect();
+                break;
+            case 'data-manage':
+                showDataManagePageDirect();
+                break;
+            default:
+                showHomePage();
+        }
+    }
+    
     // ===== 页面切换 =====
     function hideAllPages() {
         [contentPage, milestonePage, observationPage, feedingRecordPage, sleepLogPage, dataManagePage].forEach(p => p.classList.remove('active'));
@@ -85,10 +159,18 @@ document.addEventListener('DOMContentLoaded', function() {
         homePage.classList.add('active');
         currentAge = null;
         currentChannel = 'feeding';
+        clearStack();
         updateTabActive();
+        resetAgeCardsState();
+        updateAgeCardsForChannel(currentChannel);
     }
     
     function showContentPage(age, channel) {
+        // 记录当前页面状态到栈
+        if (contentPage.classList.contains('active')) {
+            pushToStack('content', { age: currentAge, channel: currentChannel });
+        }
+        
         hideAllPages();
         homePage.classList.remove('active');
         contentPage.classList.add('active');
@@ -96,10 +178,44 @@ document.addEventListener('DOMContentLoaded', function() {
         currentChannel = channel;
         currentAgeTitle.textContent = ageTitles[age];
         updateTabActive();
+        resetSearchAndFilter();
+        loadContent();
+        
+        // 添加历史记录
+        history.pushState({ page: 'content', age: age, channel: channel }, '', `#${age}/${channel}`);
+    }
+    
+    // 直接切换（不压栈，用于返回）
+    function showContentPageDirect() {
+        hideAllPages();
+        homePage.classList.remove('active');
+        contentPage.classList.add('active');
+        currentAgeTitle.textContent = ageTitles[currentAge];
+        updateTabActive();
+        resetSearchAndFilter();
         loadContent();
     }
     
     function showMilestonePage() {
+        // 记录当前页面状态到栈
+        if (homePage.classList.contains('active')) {
+            pushToStack('home', {});
+        } else if (contentPage.classList.contains('active')) {
+            pushToStack('content', { age: currentAge, channel: currentChannel });
+        }
+        
+        hideAllPages();
+        homePage.classList.remove('active');
+        milestonePage.classList.add('active');
+        
+        // 月龄限制：强制设为 month-1
+        currentAge = 'month-1';
+        
+        loadMilestoneContent();
+        history.pushState({ page: 'milestone' }, '', '#milestone');
+    }
+    
+    function showMilestonePageDirect() {
         hideAllPages();
         homePage.classList.remove('active');
         milestonePage.classList.add('active');
@@ -107,6 +223,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showObservationPage() {
+        // 记录当前页面状态到栈
+        if (homePage.classList.contains('active')) {
+            pushToStack('home', {});
+        } else if (contentPage.classList.contains('active')) {
+            pushToStack('content', { age: currentAge, channel: currentChannel });
+        }
+        
+        hideAllPages();
+        homePage.classList.remove('active');
+        observationPage.classList.add('active');
+        
+        // 月龄限制：强制设为 month-1
+        currentAge = 'month-1';
+        
+        loadObservationContent();
+        history.pushState({ page: 'observation' }, '', '#observation');
+    }
+    
+    function showObservationPageDirect() {
         hideAllPages();
         homePage.classList.remove('active');
         observationPage.classList.add('active');
@@ -114,6 +249,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showFeedingRecordPage() {
+        // 记录当前页面状态到栈
+        if (homePage.classList.contains('active')) {
+            pushToStack('home', {});
+        } else if (contentPage.classList.contains('active')) {
+            pushToStack('content', { age: currentAge, channel: currentChannel });
+        }
+        
+        hideAllPages();
+        homePage.classList.remove('active');
+        feedingRecordPage.classList.add('active');
+        
+        // 月龄限制：强制设为 month-1
+        currentAge = 'month-1';
+        
+        loadFeedingRecordContent();
+        history.pushState({ page: 'feeding-record' }, '', '#feeding-record');
+    }
+    
+    function showFeedingRecordPageDirect() {
         hideAllPages();
         homePage.classList.remove('active');
         feedingRecordPage.classList.add('active');
@@ -121,6 +275,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showSleepLogPage() {
+        // 记录当前页面状态到栈
+        if (homePage.classList.contains('active')) {
+            pushToStack('home', {});
+        } else if (contentPage.classList.contains('active')) {
+            pushToStack('content', { age: currentAge, channel: currentChannel });
+        }
+        
+        hideAllPages();
+        homePage.classList.remove('active');
+        sleepLogPage.classList.add('active');
+        
+        // 月龄限制：强制设为 month-1
+        currentAge = 'month-1';
+        
+        loadSleepLogContent();
+        history.pushState({ page: 'sleep-log' }, '', '#sleep-log');
+    }
+    
+    function showSleepLogPageDirect() {
         hideAllPages();
         homePage.classList.remove('active');
         sleepLogPage.classList.add('active');
@@ -128,10 +301,111 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showDataManagePage() {
+        // 记录当前页面状态到栈
+        if (homePage.classList.contains('active')) {
+            pushToStack('home', {});
+        } else if (contentPage.classList.contains('active')) {
+            pushToStack('content', { age: currentAge, channel: currentChannel });
+        }
+        
+        hideAllPages();
+        homePage.classList.remove('active');
+        dataManagePage.classList.add('active');
+        
+        // 月龄限制：强制设为 month-1
+        currentAge = 'month-1';
+        
+        loadDataManageContent();
+        history.pushState({ page: 'data-manage' }, '', '#data-manage');
+    }
+    
+    function showDataManagePageDirect() {
         hideAllPages();
         homePage.classList.remove('active');
         dataManagePage.classList.add('active');
         loadDataManageContent();
+    }
+    
+    // ===== 月龄卡片状态管理 =====
+    function resetAgeCardsState() {
+        ageCards.forEach(card => {
+            card.classList.remove('disabled');
+            card.style.pointerEvents = '';
+            card.style.opacity = '';
+        });
+    }
+    
+    function updateAgeCardsForChannel(channel) {
+        // 四大频道：月龄卡片显示为禁用状态
+        const isRestricted = ['milestone', 'observation', 'feeding-record', 'sleep-log'].includes(channel);
+        
+        if (isRestricted) {
+            ageCards.forEach(card => {
+                card.classList.add('disabled');
+                card.style.pointerEvents = 'none';
+                card.style.opacity = '0.5';
+            });
+        } else {
+            resetAgeCardsState();
+        }
+    }
+    
+    // ===== 搜索和筛选功能 =====
+    function resetSearchAndFilter() {
+        searchQuery = '';
+        activeFilters.clear();
+        
+        // 清空搜索框
+        const searchInput = document.getElementById('content-search');
+        if (searchInput) searchInput.value = '';
+        
+        // 重置筛选按钮
+        document.querySelectorAll('.filter-tag-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+    
+    function highlightText(text, query) {
+        if (!query) return text;
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.replace(regex, '<span class="highlight">$1</span>');
+    }
+    
+    function filterCards() {
+        const cards = document.querySelectorAll('.content-card');
+        let visibleCount = 0;
+        
+        cards.forEach(card => {
+            const title = card.querySelector('h3').textContent.toLowerCase();
+            const body = card.querySelector('.content-card-body').textContent.toLowerCase();
+            const searchLower = searchQuery.toLowerCase();
+            
+            // 搜索匹配
+            const searchMatch = !searchQuery || title.includes(searchLower) || body.includes(searchLower);
+            
+            // 筛选匹配
+            const cardTags = card.dataset.tags ? card.dataset.tags.split(',') : [];
+            const filterMatch = activeFilters.size === 0 || 
+                [...activeFilters].some(tag => cardTags.includes(tag));
+            
+            if (searchMatch && filterMatch) {
+                card.style.display = '';
+                // 高亮搜索文字
+                if (searchQuery) {
+                    const titleEl = card.querySelector('h3');
+                    titleEl.innerHTML = highlightText(titleEl.textContent, searchQuery);
+                }
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // 更新结果计数
+        const resultCount = document.getElementById('search-result-count');
+        if (resultCount) {
+            resultCount.textContent = `显示 ${visibleCount} / ${cards.length} 条`;
+        }
     }
     
     // ===== Tab切换 =====
@@ -157,11 +431,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h2>${ageTitles[currentAge]} · 成长指南</h2>
                 <span class="channel-badge">${channelTitles[currentChannel]}</span>
             </div>
+            
+            <!-- 搜索和筛选区域 -->
+            <div class="search-filter-container">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="content-search" placeholder="搜索内容..." autocomplete="off">
+                    <button class="search-clear" id="clear-search" style="display:none;">×</button>
+                </div>
+                <div class="filter-tags" id="filter-tags">
+                    ${allTags.map(tag => `<button class="filter-tag-btn" data-tag="${tag}">${tag}</button>`).join('')}
+                </div>
+                <div class="search-result-info">
+                    <span id="search-result-count"></span>
+                </div>
+            </div>
         `;
         
         data.cards.forEach(card => {
+            // 提取标签（从标题和内容中简单识别）
+            const tags = extractTags(card);
+            
             html += `
-                <div class="content-card" data-id="${card.id}">
+                <div class="content-card" data-id="${card.id}" data-tags="${tags.join(',')}">
                     <div class="content-card-header">
                         <h3>${card.icon ? card.icon + ' ' : ''}${card.title}</h3>
                         <span class="toggle-icon">▼</span>
@@ -175,6 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         contentArea.innerHTML = html;
         
+        // 绑定卡片展开/收起
         document.querySelectorAll('.content-card-header').forEach(header => {
             header.addEventListener('click', function() {
                 const card = this.parentElement;
@@ -182,10 +475,78 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
+        // 展开第一张卡片
         const firstCard = document.querySelector('.content-card');
         if (firstCard) {
             firstCard.classList.add('expanded');
         }
+        
+        // 绑定搜索功能
+        const searchInput = document.getElementById('content-search');
+        const clearBtn = document.getElementById('clear-search');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                searchQuery = this.value.trim();
+                clearBtn.style.display = searchQuery ? 'block' : 'none';
+                filterCards();
+            });
+        }
+        
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                searchQuery = '';
+                this.style.display = 'none';
+                filterCards();
+            });
+        }
+        
+        // 绑定筛选标签
+        document.querySelectorAll('.filter-tag-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tag = this.dataset.tag;
+                this.classList.toggle('active');
+                
+                if (activeFilters.has(tag)) {
+                    activeFilters.delete(tag);
+                } else {
+                    activeFilters.add(tag);
+                }
+                
+                filterCards();
+            });
+        });
+        
+        // 初始筛选
+        filterCards();
+    }
+    
+    // 提取卡片标签
+    function extractTags(card) {
+        const tags = [];
+        const content = (card.title + ' ' + (card.content || '')).toLowerCase();
+        
+        const tagKeywords = {
+            '辅食': ['辅食', '米粉', '泥', '添加', '断奶'],
+            '睡眠': ['睡眠', '睡觉', '午睡', '夜醒', '哄睡'],
+            '安全': ['安全', '防护', '危险', '急救'],
+            '早教': ['早教', '智力', '发育', '游戏', '玩具'],
+            '疫苗': ['疫苗', '接种', '预防针'],
+            '疾病': ['发烧', '感冒', '咳嗽', '腹泻', '湿疹', '过敏'],
+            '护理': ['护理', '清洁', '洗澡', '口腔'],
+            '心理': ['心理', '情绪', '分离焦虑'],
+            '运动': ['大动作', '精细动作', '爬', '走', '跑'],
+            '语言': ['语言', '说话', '发音', '沟通']
+        };
+        
+        for (const [tag, keywords] of Object.entries(tagKeywords)) {
+            if (keywords.some(kw => content.includes(kw))) {
+                tags.push(tag);
+            }
+        }
+        
+        return tags;
     }
     
     // ===== 发育里程碑页面内容 =====
@@ -560,139 +921,106 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="hidden" id="fr-type" value="breast">
                     </div>
 
-                    <div id="fr-amount-section" class="form-group">
-                        <label>喂养量 (ml)</label>
-                        <input type="number" id="fr-amount" step="5" min="0" max="500" placeholder="如：120">
+                    <div class="form-row">
+                        <div class="form-group" id="amount-group">
+                            <label>奶量 (ml)</label>
+                            <input type="number" id="fr-amount" min="0" max="500" placeholder="如：120">
+                        </div>
+                        <div class="form-group" id="duration-group" style="display:none;">
+                            <label>时长 (分钟)</label>
+                            <input type="number" id="fr-duration" min="1" max="60" placeholder="如：15">
+                        </div>
                     </div>
 
-                    <div id="fr-duration-section" class="form-group">
-                        <label>喂养时长 (分钟)</label>
-                        <input type="number" id="fr-duration" step="1" min="1" max="120" placeholder="如：15">
-                    </div>
-
-                    <div id="fr-side-section" class="form-group">
-                        <label>喂养侧</label>
+                    <div class="form-group" id="side-group">
+                        <label>吃哪侧</label>
                         <select id="fr-side">
-                            <option value="both">两侧</option>
                             <option value="left">左侧</option>
                             <option value="right">右侧</option>
+                            <option value="both">双侧</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label>备注（可选）</label>
-                        <textarea id="fr-note" class="form-textarea" placeholder="如：宝宝吃得很好、吐了一点等"></textarea>
+                        <label>备注</label>
+                        <textarea id="fr-note" class="form-textarea" placeholder="可选：记录宝宝吃奶情况"></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary">保存记录</button>
                 </form>
             </div>
 
-            <div class="record-list">
-                <h3>📋 今日记录 (${todayRecords.length}次)</h3>
-                ${todayRecords.length > 0 ? todayRecords.map((r, i) => {
-                    const idx = records.indexOf(r);
-                    return `
-                    <div class="record-item">
-                        <div class="record-info">
-                            <span class="date">${r.time || '--:--'}</span>
-                            <span>${feedingTypes[r.type]?.icon || '📝'} ${feedingTypes[r.type]?.name || r.type}</span>
-                            ${r.amount ? `<span><strong>${r.amount}ml</strong></span>` : ''}
-                            ${r.duration ? `<span>${r.duration}分钟</span>` : ''}
-                            ${r.side === 'left' ? '<span>左侧</span>' : r.side === 'right' ? '<span>右侧</span>' : r.side === 'both' ? '<span>两侧</span>' : ''}
-                        </div>
-                        <div class="record-actions">
-                            <button class="delete-btn" onclick="deleteFeedingRecord(${idx})">删除</button>
-                        </div>
-                    </div>
-                    `;
-                }).join('') : '<div class="no-record">今日暂无记录</div>'}
-            </div>
-
-            <div class="record-list" style="margin-top:1rem">
-                <h3>📋 近7天记录</h3>
-                ${renderFeedingHistory(records)}
-            </div>
+            ${todayRecords.length > 0 ? `
+                <div class="record-list">
+                    <h3>📋 今日记录 (${todayRecords.length}条)</h3>
+                    ${todayRecords.map((r, i) => {
+                        const realIndex = records.length - 1 - records.reverse().findIndex(rec => 
+                            rec.date === r.date && rec.time === r.time && rec.type === r.type
+                        );
+                        return `
+                            <div class="record-item">
+                                <div class="record-info">
+                                    <span class="date">${r.time}</span>
+                                    <span>${feedingTypes[r.type]?.icon || '🍴'} ${feedingTypes[r.type]?.name || r.type}</span>
+                                    ${r.amount ? `<span>${r.amount}ml</span>` : ''}
+                                    ${r.duration ? `<span>${r.duration}分钟</span>` : ''}
+                                    ${r.side ? `<span>${r.side === 'left' ? '左侧' : r.side === 'right' ? '右侧' : '双侧'}</span>` : ''}
+                                </div>
+                                <div class="record-actions">
+                                    <button class="delete-btn" onclick="deleteFeedingRecord(${realIndex})">删除</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            ` : `
+                <div class="no-record">今日暂无喂养记录</div>
+            `}
         `;
 
-        // 绑定喂养类型选择
+        // 绑定表单事件
         document.querySelectorAll('[data-fdtype]').forEach(opt => {
             opt.addEventListener('click', function() {
                 document.querySelectorAll('[data-fdtype]').forEach(o => o.classList.remove('selected'));
                 this.classList.add('selected');
-                document.getElementById('fr-type').value = this.dataset.fdtype;
-                updateFeedingFormFields(this.dataset.fdtype);
+                const type = this.dataset.fdtype;
+                document.getElementById('fr-type').value = type;
+                
+                // 显示/隐藏相关字段
+                const amountGroup = document.getElementById('amount-group');
+                const durationGroup = document.getElementById('duration-group');
+                const sideGroup = document.getElementById('side-group');
+                
+                if (type === 'breast') {
+                    amountGroup.style.display = 'none';
+                    durationGroup.style.display = '';
+                    sideGroup.style.display = '';
+                } else {
+                    amountGroup.style.display = '';
+                    durationGroup.style.display = 'none';
+                    sideGroup.style.display = 'none';
+                }
             });
         });
 
-        updateFeedingFormFields('breast');
-
         document.getElementById('feeding-form').addEventListener('submit', saveFeedingRecord);
-    }
-
-    function updateFeedingFormFields(type) {
-        const amountSection = document.getElementById('fr-amount-section');
-        const durationSection = document.getElementById('fr-duration-section');
-        const sideSection = document.getElementById('fr-side-section');
-
-        if (type === 'breast') {
-            amountSection.style.display = 'none';
-            durationSection.style.display = 'block';
-            sideSection.style.display = 'block';
-        } else if (type === 'formula' || type === 'water') {
-            amountSection.style.display = 'block';
-            durationSection.style.display = 'none';
-            sideSection.style.display = 'none';
-        } else if (type === 'solid') {
-            amountSection.style.display = 'none';
-            durationSection.style.display = 'none';
-            sideSection.style.display = 'none';
-        }
-    }
-
-    function renderFeedingHistory(records) {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const recentRecords = records.filter(r => new Date(r.date) >= sevenDaysAgo).sort((a, b) => {
-            if (b.date !== a.date) return b.date.localeCompare(a.date);
-            return (b.time || '').localeCompare(a.time || '');
-        });
-
-        if (recentRecords.length === 0) return '<div class="no-record">暂无记录</div>';
-
-        return recentRecords.map((r, i) => {
-            const idx = records.indexOf(r);
-            return `
-            <div class="record-item">
-                <div class="record-info">
-                    <span class="date">${r.date} ${r.time || ''}</span>
-                    <span>${feedingTypes[r.type]?.icon || '📝'} ${feedingTypes[r.type]?.name || r.type}</span>
-                    ${r.amount ? `<span><strong>${r.amount}ml</strong></span>` : ''}
-                    ${r.duration ? `<span>${r.duration}分钟</span>` : ''}
-                </div>
-                <div class="record-actions">
-                    <button class="delete-btn" onclick="deleteFeedingRecord(${idx})">删除</button>
-                </div>
-            </div>
-            `;
-        }).join('');
     }
 
     function loadFeedingStats() {
         const records = JSON.parse(localStorage.getItem('parenting_feeding') || '[]');
         const today = new Date().toISOString().split('T')[0];
-
-        // 今日统计
+        
         const todayRecords = records.filter(r => r.date === today);
-        const todayBreast = todayRecords.filter(r => r.type === 'breast');
-        const todayFormula = todayRecords.filter(r => r.type === 'formula');
-        const todaySolid = todayRecords.filter(r => r.type === 'solid');
-        const todayTotalFormula = todayFormula.reduce((sum, r) => sum + (parseInt(r.amount) || 0), 0);
-
-        // 近7天统计
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const weekRecords = records.filter(r => new Date(r.date) >= sevenDaysAgo);
+        const todayFeedingCount = todayRecords.length;
+        const todayMilkTotal = todayRecords.filter(r => r.amount).reduce((sum, r) => sum + parseInt(r.amount), 0);
+        
+        const weekRecords = records.filter(r => {
+            const date = new Date(r.date);
+            const now = new Date();
+            const weekAgo = new Date(now.setDate(now.getDate() - 7));
+            return date >= weekAgo;
+        });
+        const weekAvg = Math.round(weekRecords.length / 7);
 
         feedingRecordContent.innerHTML = `
             <div class="milestone-header">
@@ -701,87 +1029,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <div class="stats-grid">
                 <div class="stats-card">
-                    <div class="stats-value">${todayRecords.length}</div>
+                    <div class="stats-value">${todayFeedingCount}</div>
                     <div class="stats-label">今日喂养次数</div>
                 </div>
                 <div class="stats-card">
-                    <div class="stats-value">${todayBreast.length}</div>
-                    <div class="stats-label">母乳次数</div>
+                    <div class="stats-value">${todayMilkTotal}</div>
+                    <div class="stats-label">今日奶量 (ml)</div>
                 </div>
                 <div class="stats-card">
-                    <div class="stats-value">${todayTotalFormula > 0 ? todayTotalFormula + 'ml' : '-'}</div>
-                    <div class="stats-label">配方奶总量</div>
+                    <div class="stats-value">${weekAvg}</div>
+                    <div class="stats-label">近7日平均次数</div>
                 </div>
                 <div class="stats-card">
-                    <div class="stats-value">${todaySolid.length}</div>
-                    <div class="stats-label">辅食次数</div>
+                    <div class="stats-value">${records.length}</div>
+                    <div class="stats-label">总记录数</div>
                 </div>
-            </div>
-
-            <div class="chart-container">
-                <div id="feeding-chart" class="chart-wrapper"></div>
             </div>
 
             <div class="milestone-info">
-                <h4>💡 喂养参考</h4>
+                <h4>💡 喂养小贴士</h4>
                 <ul>
-                    <li><strong>0-1月</strong>：每天8-12次，按需喂养</li>
-                    <li><strong>1-3月</strong>：每天6-8次，约600-800ml</li>
-                    <li><strong>3-6月</strong>：每天5-6次，约750-900ml</li>
-                    <li><strong>6-12月</strong>：每天4-5次奶+1-3次辅食</li>
-                    <li><strong>1-3岁</strong>：每天3餐+2次奶（约400-600ml）</li>
+                    <li>新生儿按需喂养，通常每天8-12次</li>
+                    <li>1-2月龄可逐渐建立规律喂养</li>
+                    <li>母乳宝宝不必纠结奶量，看尿布判断</li>
+                    <li>定期记录有助于发现喂养规律</li>
                 </ul>
             </div>
         `;
-
-        // 绘制近7天喂养图表
-        setTimeout(() => {
-            initFeedingChart(weekRecords);
-        }, 100);
-    }
-
-    function initFeedingChart(records) {
-        const chartDom = document.getElementById('feeding-chart');
-        if (!chartDom) return;
-
-        const myChart = echarts.init(chartDom);
-        const days = [];
-        const breastCounts = [];
-        const formulaAmounts = [];
-        const solidCounts = [];
-
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
-            const label = (d.getMonth() + 1) + '/' + d.getDate();
-            days.push(label);
-
-            const dayRecords = records.filter(r => r.date === dateStr);
-            breastCounts.push(dayRecords.filter(r => r.type === 'breast').length);
-            formulaAmounts.push(dayRecords.filter(r => r.type === 'formula').reduce((sum, r) => sum + (parseInt(r.amount) || 0), 0));
-            solidCounts.push(dayRecords.filter(r => r.type === 'solid').length);
-        }
-
-        const option = {
-            title: { text: '近7天喂养趋势', left: 'center', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#5D4E6D' } },
-            tooltip: { trigger: 'axis' },
-            legend: { data: ['母乳次数', '配方奶(ml)', '辅食次数'], bottom: 0 },
-            grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true },
-            xAxis: { type: 'category', data: days },
-            yAxis: [
-                { type: 'value', name: '次数', min: 0 },
-                { type: 'value', name: 'ml', min: 0 }
-            ],
-            series: [
-                { name: '母乳次数', type: 'bar', data: breastCounts, itemStyle: { color: '#FF9A9E' } },
-                { name: '配方奶(ml)', type: 'bar', yAxisIndex: 1, data: formulaAmounts, itemStyle: { color: '#87CEEB' } },
-                { name: '辅食次数', type: 'bar', data: solidCounts, itemStyle: { color: '#A8E6CF' } }
-            ]
-        };
-
-        myChart.setOption(option);
-        window.addEventListener('resize', () => myChart.resize());
     }
 
     // ===== 睡眠日志页面内容 =====
@@ -800,43 +1074,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadSleepRecordForm() {
         const records = JSON.parse(localStorage.getItem('parenting_sleep') || '[]');
         const today = new Date().toISOString().split('T')[0];
-        const todayRecords = records.filter(r => r.date === today);
-        const now = new Date();
-        const timeNow = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-
-        // 计算今日总睡眠
-        const todayTotalMinutes = todayRecords.reduce((sum, r) => {
-            if (r.bedTime && r.wakeTime) {
-                return sum + calcSleepMinutes(r.bedTime, r.wakeTime);
-            }
-            return sum;
-        }, 0);
-        const todayTotalHours = (todayTotalMinutes / 60).toFixed(1);
 
         sleepLogContent.innerHTML = `
             <div class="milestone-header">
-                <h2>😴 睡眠日志</h2>
-            </div>
-
-            <div class="stats-grid" style="margin-bottom:1.5rem">
-                <div class="stats-card">
-                    <div class="stats-value">${todayTotalHours}h</div>
-                    <div class="stats-label">今日总睡眠</div>
-                </div>
-                <div class="stats-card">
-                    <div class="stats-value">${todayRecords.length}</div>
-                    <div class="stats-label">今日睡眠次数</div>
-                </div>
+                <h2>🌙 睡眠日志</h2>
             </div>
 
             <div class="record-form">
-                <h3 class="form-title">✏️ 记录一次睡眠</h3>
+                <h3 class="form-title">✏️ 记录睡眠</h3>
                 <form id="sleep-form">
                     <div class="form-group">
                         <label>日期</label>
                         <input type="date" id="sl-date" required value="${today}">
                     </div>
-
                     <div class="form-row">
                         <div class="form-group">
                             <label>入睡时间</label>
@@ -844,134 +1094,85 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="form-group">
                             <label>醒来时间</label>
-                            <input type="time" id="sl-waketime" required value="${timeNow}">
+                            <input type="time" id="sl-waketime" required value="07:00">
                         </div>
                     </div>
-
-                    <div class="form-section">
-                        <h4>睡眠质量</h4>
+                    <div class="form-group">
+                        <label>睡眠质量</label>
                         <div class="category-options">
-                            <div class="category-option selected" data-sqtype="good">
+                            <div class="category-option" data-quality="good">
                                 <div class="cat-icon">😊</div>
                                 <div class="cat-name">睡得好</div>
                             </div>
-                            <div class="category-option" data-sqtype="normal">
+                            <div class="category-option selected" data-quality="normal">
                                 <div class="cat-icon">😐</div>
                                 <div class="cat-name">一般</div>
                             </div>
-                            <div class="category-option" data-sqtype="bad">
+                            <div class="category-option" data-quality="bad">
                                 <div class="cat-icon">😔</div>
                                 <div class="cat-name">睡不好</div>
                             </div>
                         </div>
-                        <input type="hidden" id="sl-quality" value="good">
+                        <input type="hidden" id="sl-quality" value="normal">
                     </div>
-
                     <div class="form-group">
-                        <label>备注（可选）</label>
-                        <textarea id="sl-note" class="form-textarea" placeholder="如：夜醒2次、需要抱睡等"></textarea>
+                        <label>备注</label>
+                        <textarea id="sl-note" class="form-textarea" placeholder="可选：记录特殊情况"></textarea>
                     </div>
-
                     <button type="submit" class="btn btn-primary">保存记录</button>
                 </form>
             </div>
 
             <div class="record-list">
-                <h3>📋 今日睡眠记录</h3>
-                ${todayRecords.length > 0 ? todayRecords.map((r, i) => {
-                    const idx = records.indexOf(r);
-                    const dur = calcSleepMinutes(r.bedTime, r.wakeTime);
-                    const hours = Math.floor(dur / 60);
-                    const mins = dur % 60;
+                <h3>📋 最近记录</h3>
+                ${records.length > 0 ? records.slice(-10).reverse().map((r, i) => {
+                    const realIndex = records.length - 1 - i;
                     return `
-                    <div class="record-item">
-                        <div class="record-info">
-                            <span class="date">${r.bedTime || '--:--'} → ${r.wakeTime || '--:--'}</span>
-                            <span><strong>${hours}h${mins > 0 ? mins + 'min' : ''}</strong></span>
-                            <span>${sleepQualities[r.quality]?.icon || ''} ${sleepQualities[r.quality]?.name || ''}</span>
+                        <div class="record-item">
+                            <div class="record-info">
+                                <span class="date">${r.date}</span>
+                                <span>${r.bedTime} - ${r.wakeTime}</span>
+                                <span>${sleepQualities[r.quality]?.icon || '😊'} ${sleepQualities[r.quality]?.name || r.quality}</span>
+                            </div>
+                            <div class="record-actions">
+                                <button class="delete-btn" onclick="deleteSleepRecord(${realIndex})">删除</button>
+                            </div>
                         </div>
-                        <div class="record-actions">
-                            <button class="delete-btn" onclick="deleteSleepRecord(${idx})">删除</button>
-                        </div>
-                    </div>
                     `;
-                }).join('') : '<div class="no-record">今日暂无记录</div>'}
-            </div>
-
-            <div class="record-list" style="margin-top:1rem">
-                <h3>📋 近7天记录</h3>
-                ${renderSleepHistory(records)}
+                }).join('') : '<div class="no-record">暂无睡眠记录</div>'}
             </div>
         `;
 
-        // 绑定睡眠质量选择
-        document.querySelectorAll('[data-sqtype]').forEach(opt => {
+        document.querySelectorAll('[data-quality]').forEach(opt => {
             opt.addEventListener('click', function() {
-                document.querySelectorAll('[data-sqtype]').forEach(o => o.classList.remove('selected'));
+                document.querySelectorAll('[data-quality]').forEach(o => o.classList.remove('selected'));
                 this.classList.add('selected');
-                document.getElementById('sl-quality').value = this.dataset.sqtype;
+                document.getElementById('sl-quality').value = this.dataset.quality;
             });
         });
 
         document.getElementById('sleep-form').addEventListener('submit', saveSleepRecord);
     }
 
-    function calcSleepMinutes(bedTime, wakeTime) {
-        if (!bedTime || !wakeTime) return 0;
-        const [bh, bm] = bedTime.split(':').map(Number);
-        const [wh, wm] = wakeTime.split(':').map(Number);
-        let bedMin = bh * 60 + bm;
-        let wakeMin = wh * 60 + wm;
-        if (wakeMin <= bedMin) wakeMin += 24 * 60; // 跨夜
-        return wakeMin - bedMin;
-    }
-
-    function renderSleepHistory(records) {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const recentRecords = records.filter(r => new Date(r.date) >= sevenDaysAgo).sort((a, b) => {
-            if (b.date !== a.date) return b.date.localeCompare(a.date);
-            return (b.bedTime || '').localeCompare(a.bedTime || '');
-        });
-
-        if (recentRecords.length === 0) return '<div class="no-record">暂无记录</div>';
-
-        return recentRecords.map((r, i) => {
-            const idx = records.indexOf(r);
-            const dur = calcSleepMinutes(r.bedTime, r.wakeTime);
-            const hours = Math.floor(dur / 60);
-            const mins = dur % 60;
-            return `
-            <div class="record-item">
-                <div class="record-info">
-                    <span class="date">${r.date}</span>
-                    <span>${r.bedTime} → ${r.wakeTime}</span>
-                    <span><strong>${hours}h${mins > 0 ? mins + 'min' : ''}</strong></span>
-                    <span>${sleepQualities[r.quality]?.icon || ''}</span>
-                </div>
-                <div class="record-actions">
-                    <button class="delete-btn" onclick="deleteSleepRecord(${idx})">删除</button>
-                </div>
-            </div>
-            `;
-        }).join('');
-    }
-
     function loadSleepStats() {
         const records = JSON.parse(localStorage.getItem('parenting_sleep') || '[]');
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const weekRecords = records.filter(r => new Date(r.date) >= sevenDaysAgo);
+        
+        const avgSleepTime = records.length > 0 ? Math.round(
+            records.reduce((sum, r) => {
+                const [bh, bm] = r.bedTime.split(':').map(Number);
+                const [wh, wm] = r.wakeTime.split(':').map(Number);
+                const bedMins = bh * 60 + bm;
+                let wakeMins = wh * 60 + wm;
+                if (wakeMins < bedMins) wakeMins += 24 * 60;
+                return sum + (wakeMins - bedMins);
+            }, 0) / records.length / 60 * 10
+        ) / 10 : 0;
 
-        // 计算平均睡眠
-        const dailySleep = {};
-        weekRecords.forEach(r => {
-            if (!dailySleep[r.date]) dailySleep[r.date] = 0;
-            dailySleep[r.date] += calcSleepMinutes(r.bedTime, r.wakeTime);
-        });
-        const days = Object.keys(dailySleep);
-        const avgSleep = days.length > 0 ? (days.reduce((sum, d) => sum + dailySleep[d], 0) / days.length / 60).toFixed(1) : '-';
-        const avgSessions = days.length > 0 ? (weekRecords.length / days.length).toFixed(1) : '-';
+        const qualityStats = {
+            good: records.filter(r => r.quality === 'good').length,
+            normal: records.filter(r => r.quality === 'normal').length,
+            bad: records.filter(r => r.quality === 'bad').length
+        };
 
         sleepLogContent.innerHTML = `
             <div class="milestone-header">
@@ -980,77 +1181,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <div class="stats-grid">
                 <div class="stats-card">
-                    <div class="stats-value">${avgSleep}h</div>
-                    <div class="stats-label">日均睡眠</div>
+                    <div class="stats-value">${avgSleepTime}</div>
+                    <div class="stats-label">平均睡眠 (小时)</div>
                 </div>
                 <div class="stats-card">
-                    <div class="stats-value">${avgSessions}</div>
-                    <div class="stats-label">日均睡眠次数</div>
+                    <div class="stats-value">${records.length}</div>
+                    <div class="stats-label">总记录数</div>
                 </div>
-            </div>
-
-            <div class="chart-container">
-                <div id="sleep-chart" class="chart-wrapper"></div>
             </div>
 
             <div class="milestone-info">
-                <h4>💡 睡眠参考</h4>
+                <h4>📈 睡眠质量分布</h4>
                 <ul>
-                    <li><strong>0-1月</strong>：每天16-18小时，无昼夜节律</li>
-                    <li><strong>1-3月</strong>：每天14-16小时，夜间睡眠延长</li>
-                    <li><strong>3-6月</strong>：每天12-15小时，可能睡整觉</li>
-                    <li><strong>6-12月</strong>：每天12-14小时，白天2次小睡</li>
-                    <li><strong>1-2岁</strong>：每天11-14小时，白天1次小睡</li>
-                    <li><strong>2-3岁</strong>：每天10-13小时，可能不再午睡</li>
+                    <li>😊 睡得好：${qualityStats.good}次</li>
+                    <li>😐 一般：${qualityStats.normal}次</li>
+                    <li>😔 睡不好：${qualityStats.bad}次</li>
+                </ul>
+            </div>
+
+            <div class="milestone-info">
+                <h4>💡 各月龄睡眠参考</h4>
+                <ul>
+                    <li><strong>0-3月</strong>：每天14-17小时</li>
+                    <li><strong>4-12月</strong>：每天12-15小时</li>
+                    <li><strong>1-2岁</strong>：每天11-14小时（含午睡）</li>
+                    <li><strong>2-3岁</strong>：每天10-13小时（含午睡）</li>
                 </ul>
             </div>
         `;
-
-        setTimeout(() => {
-            initSleepChart(weekRecords);
-        }, 100);
-    }
-
-    function initSleepChart(records) {
-        const chartDom = document.getElementById('sleep-chart');
-        if (!chartDom) return;
-
-        const myChart = echarts.init(chartDom);
-        const days = [];
-        const sleepHours = [];
-        const sessionCounts = [];
-
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
-            const label = (d.getMonth() + 1) + '/' + d.getDate();
-            days.push(label);
-
-            const dayRecords = records.filter(r => r.date === dateStr);
-            const totalMin = dayRecords.reduce((sum, r) => sum + calcSleepMinutes(r.bedTime, r.wakeTime), 0);
-            sleepHours.push(parseFloat((totalMin / 60).toFixed(1)));
-            sessionCounts.push(dayRecords.length);
-        }
-
-        const option = {
-            title: { text: '近7天睡眠趋势', left: 'center', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#5D4E6D' } },
-            tooltip: { trigger: 'axis' },
-            legend: { data: ['睡眠时长(h)', '睡眠次数'], bottom: 0 },
-            grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true },
-            xAxis: { type: 'category', data: days },
-            yAxis: [
-                { type: 'value', name: '小时', min: 0 },
-                { type: 'value', name: '次数', min: 0 }
-            ],
-            series: [
-                { name: '睡眠时长(h)', type: 'bar', data: sleepHours, itemStyle: { color: '#B39DDB' } },
-                { name: '睡眠次数', type: 'line', yAxisIndex: 1, data: sessionCounts, itemStyle: { color: '#FF9A9E' }, lineStyle: { color: '#FF9A9E' } }
-            ]
-        };
-
-        myChart.setOption(option);
-        window.addEventListener('resize', () => myChart.resize());
     }
 
     // ===== 数据管理页面内容 =====
@@ -1067,54 +1225,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function loadExportPage() {
-        // 统计各模块数据量
-        const dataKeys = [
-            { key: 'parenting_height_weight', name: '身高体重记录', icon: '📊' },
-            { key: 'parenting_observation', name: '观察手记', icon: '📝' },
-            { key: 'parenting_feeding', name: '喂养记录', icon: '🍼' },
-            { key: 'parenting_sleep', name: '睡眠日志', icon: '😴' },
-            { key: 'parenting_gender', name: '宝宝性别', icon: '👶' },
-            { key: 'parenting_birth_date', name: '宝宝出生日期', icon: '🎂' }
-        ];
-
-        const dataSummary = dataKeys.map(dk => {
-            const raw = localStorage.getItem(dk.key);
-            let count = '-';
-            if (raw) {
-                try {
-                    const parsed = JSON.parse(raw);
-                    count = Array.isArray(parsed) ? parsed.length + '条' : '已设置';
-                } catch(e) {
-                    count = '已设置';
-                }
-            } else {
-                count = '无数据';
-            }
-            return { ...dk, count };
-        });
-
         dataManageContent.innerHTML = `
             <div class="milestone-header">
-                <h2>📤 导出备份</h2>
-            </div>
-
-            <div class="milestone-info">
-                <h4>📋 当前数据概况</h4>
-                <ul>
-                    ${dataSummary.map(d => `<li>${d.icon} ${d.name}：<strong>${d.count}</strong></li>`).join('')}
-                </ul>
+                <h2>📤 数据导出</h2>
             </div>
 
             <div class="record-form">
-                <h3 class="form-title">💾 一键导出所有数据</h3>
+                <h3 class="form-title">📥 备份所有数据</h3>
                 <p style="color: var(--color-text-light); margin-bottom: 1rem; font-size: 0.9rem;">
-                    导出为 JSON 文件，保存到你的电脑或手机。清浏览器缓存后可通过「导入恢复」还原所有数据。
+                    将您的所有记录导出为JSON文件，方便保存和迁移。
                 </p>
-                <button class="btn btn-primary" onclick="exportAllData()">📥 导出全部数据</button>
+                <button class="btn btn-primary" onclick="exportAllData()">📤 导出数据</button>
             </div>
 
-            <div class="milestone-info" style="margin-top:1.5rem">
-                <h4>💡 备份建议</h4>
+            <div class="milestone-info">
+                <h4>💡 数据备份建议</h4>
                 <ul>
                     <li>建议每周导出一次备份，养成习惯</li>
                     <li>重要数据更新后及时导出</li>
@@ -1172,10 +1297,6 @@ document.addEventListener('DOMContentLoaded', function() {
         records.sort((a, b) => new Date(a.date) - new Date(b.date));
         localStorage.setItem('parenting_height_weight', JSON.stringify(records));
         showToast('记录已保存！');
-        // 同步到 Supabase
-        if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-            saveHeightWeightToSupabase({ date, height, weight, head: head || null });
-        }
         loadMilestoneRecord();
     };
     
@@ -1200,10 +1321,6 @@ document.addEventListener('DOMContentLoaded', function() {
         records.splice(index, 1);
         localStorage.setItem('parenting_height_weight', JSON.stringify(records));
         showToast('记录已删除');
-        // 同步删除到 Supabase
-        if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-            deleteHeightWeightFromSupabase(record.date);
-        }
         loadMilestoneRecord();
     };
     
@@ -1232,10 +1349,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         localStorage.setItem('parenting_observation', JSON.stringify(records));
         showToast('记录已保存！');
-        // 同步到 Supabase
-        if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-            saveObservationToSupabase(newRecord);
-        }
         currentObservationTab = 'timeline';
         loadObservationContent();
     };
@@ -1287,15 +1400,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         localStorage.setItem('parenting_feeding', JSON.stringify(records));
         showToast('喂养记录已保存！');
-        // 同步到 Supabase
-        if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-            saveFeedingToSupabase({
-                date, time, type,
-                amount: amount || null,
-                duration: duration || null,
-                note: note || ''
-            });
-        }
         loadFeedingRecordForm();
     };
 
@@ -1330,12 +1434,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         localStorage.setItem('parenting_sleep', JSON.stringify(records));
         showToast('睡眠记录已保存！');
-        // 同步到 Supabase
-        if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-            saveSleepToSupabase({
-                date, start_time: bedTime, end_time: wakeTime, quality, note: note || ''
-            });
-        }
         loadSleepRecordForm();
     };
 
@@ -1351,7 +1449,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== 数据管理操作 =====
     window.exportAllData = function() {
         const allData = {};
-        // 收集所有 parenting_ 开头的数据
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith('parenting_')) {
@@ -1471,6 +1568,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== 事件绑定 =====
     ageCards.forEach(card => {
         card.addEventListener('click', function() {
+            // 检查是否被禁用
+            if (this.classList.contains('disabled')) return;
+            
             const age = this.dataset.age;
             showContentPage(age, currentChannel);
         });
@@ -1498,18 +1598,97 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    backBtn.addEventListener('click', showHomePage);
-    backFromMilestone.addEventListener('click', showHomePage);
-    backFromObservation.addEventListener('click', showHomePage);
-    backFromFeedingRecord.addEventListener('click', showHomePage);
-    backFromSleepLog.addEventListener('click', showHomePage);
-    backFromDataManage.addEventListener('click', showHomePage);
+    // 返回按钮
+    backBtn.addEventListener('click', function() {
+        if (pageStack.length > 0) {
+            const prevPage = popFromStack();
+            if (prevPage) {
+                navigateBack(prevPage);
+            }
+        } else {
+            showHomePage();
+        }
+    });
     
-    goMilestone.addEventListener('click', showMilestonePage);
-    goObservation.addEventListener('click', showObservationPage);
-    goFeedingRecord.addEventListener('click', showFeedingRecordPage);
-    goSleepLog.addEventListener('click', showSleepLogPage);
-    goDataManage.addEventListener('click', showDataManagePage);
+    backFromMilestone.addEventListener('click', function() {
+        if (pageStack.length > 0) {
+            const prevPage = popFromStack();
+            if (prevPage) {
+                navigateBack(prevPage);
+            }
+        } else {
+            showHomePage();
+        }
+    });
+    
+    backFromObservation.addEventListener('click', function() {
+        if (pageStack.length > 0) {
+            const prevPage = popFromStack();
+            if (prevPage) {
+                navigateBack(prevPage);
+            }
+        } else {
+            showHomePage();
+        }
+    });
+    
+    backFromFeedingRecord.addEventListener('click', function() {
+        if (pageStack.length > 0) {
+            const prevPage = popFromStack();
+            if (prevPage) {
+                navigateBack(prevPage);
+            }
+        } else {
+            showHomePage();
+        }
+    });
+    
+    backFromSleepLog.addEventListener('click', function() {
+        if (pageStack.length > 0) {
+            const prevPage = popFromStack();
+            if (prevPage) {
+                navigateBack(prevPage);
+            }
+        } else {
+            showHomePage();
+        }
+    });
+    
+    backFromDataManage.addEventListener('click', function() {
+        if (pageStack.length > 0) {
+            const prevPage = popFromStack();
+            if (prevPage) {
+                navigateBack(prevPage);
+            }
+        } else {
+            showHomePage();
+        }
+    });
+    
+    goMilestone.addEventListener('click', function() {
+        updateAgeCardsForChannel('milestone');
+        showMilestonePage();
+    });
+    
+    goObservation.addEventListener('click', function() {
+        updateAgeCardsForChannel('observation');
+        showObservationPage();
+    });
+    
+    goFeedingRecord.addEventListener('click', function() {
+        updateAgeCardsForChannel('feeding-record');
+        showFeedingRecordPage();
+    });
+    
+    goSleepLog.addEventListener('click', function() {
+        updateAgeCardsForChannel('sleep-log');
+        showSleepLogPage();
+    });
+    
+    goDataManage.addEventListener('click', function() {
+        updateAgeCardsForChannel('data-manage');
+        showDataManagePage();
+    });
     
     function handleHash() {
         const hash = window.location.hash;
@@ -1521,6 +1700,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (ageTitles[age] && channelTitles[channel]) {
                     showContentPage(age, channel);
                 }
+            } else if (hash === '#milestone') {
+                showMilestonePage();
+            } else if (hash === '#observation') {
+                showObservationPage();
+            } else if (hash === '#feeding-record') {
+                showFeedingRecordPage();
+            } else if (hash === '#sleep-log') {
+                showSleepLogPage();
+            } else if (hash === '#data-manage') {
+                showDataManagePage();
             }
         }
     }
@@ -1531,21 +1720,20 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             const anyActive = [contentPage, milestonePage, observationPage, feedingRecordPage, sleepLogPage, dataManagePage].some(p => p.classList.contains('active'));
-            if (anyActive) showHomePage();
+            if (anyActive) {
+                if (pageStack.length > 0) {
+                    const prevPage = popFromStack();
+                    if (prevPage) {
+                        navigateBack(prevPage);
+                    }
+                } else {
+                    showHomePage();
+                }
+            }
         }
     });
     
-    const isMobile = () => window.innerWidth <= 768;
-    
-    if (isMobile()) {
-        channelCards.forEach(card => {
-            card.addEventListener('click', function(e) {
-                const channel = this.dataset.channel;
-                showContentPage('0-1m', channel);
-            });
-        });
-    }
-    
+    // Toast提示
     window.showToast = function(message) {
         const existingToast = document.querySelector('.success-toast');
         if (existingToast) existingToast.remove();
@@ -1561,7 +1749,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     };
     
-    console.log('🌟 宝贝成长指南 v2.1 已加载（含Supabase用户系统）');
+    console.log('🌟 宝贝成长指南 v2.0 已加载（返回键优化、月龄限制、搜索筛选）');
 });
 
 // ===== 生长曲线图表初始化 =====
