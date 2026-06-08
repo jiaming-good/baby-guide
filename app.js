@@ -1,5 +1,6 @@
-// ===== 育儿指南网站应用逻辑 v2.0 =====
-// 包含：返回键优化、月龄限制、搜索、筛选、手机端优化
+// ===== 育儿指南网站应用逻辑 v3.0 =====
+// 包含：返回键优化、月龄限制、手机端均衡型优化
+// 移除了：搜索功能、筛选功能
 
 document.addEventListener('DOMContentLoaded', function() {
     // ===== 状态管理 =====
@@ -17,13 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 四大频道（月龄限制）
     const restrictedChannels = ['milestone', 'observation', 'feeding-record', 'sleep-log'];
-    
-    // 搜索和筛选状态
-    let searchQuery = '';
-    let activeFilters = new Set();
-    
-    // 所有可用标签
-    const allTags = ['辅食', '睡眠', '安全', '早教', '疫苗', '疾病', '护理', '心理', '运动', '语言'];
     
     // ===== DOM元素 =====
     const homePage = document.getElementById('home-page');
@@ -64,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
         '3-6m': '3-6月龄',
         '6-12m': '6-12月龄',
         '1-2y': '1-2岁',
-        '2-3y': '2-3y'
+        '2-3y': '2-3岁'
     };
     
     // 频道标题映射
@@ -178,7 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
         currentChannel = channel;
         currentAgeTitle.textContent = ageTitles[age];
         updateTabActive();
-        resetSearchAndFilter();
         loadContent();
         
         // 添加历史记录
@@ -192,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
         contentPage.classList.add('active');
         currentAgeTitle.textContent = ageTitles[currentAge];
         updateTabActive();
-        resetSearchAndFilter();
         loadContent();
     }
     
@@ -350,64 +342,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // ===== 搜索和筛选功能 =====
-    function resetSearchAndFilter() {
-        searchQuery = '';
-        activeFilters.clear();
-        
-        // 清空搜索框
-        const searchInput = document.getElementById('content-search');
-        if (searchInput) searchInput.value = '';
-        
-        // 重置筛选按钮
-        document.querySelectorAll('.filter-tag-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-    }
-    
-    function highlightText(text, query) {
-        if (!query) return text;
-        const regex = new RegExp(`(${query})`, 'gi');
-        return text.replace(regex, '<span class="highlight">$1</span>');
-    }
-    
-    function filterCards() {
-        const cards = document.querySelectorAll('.content-card');
-        let visibleCount = 0;
-        
-        cards.forEach(card => {
-            const title = card.querySelector('h3').textContent.toLowerCase();
-            const body = card.querySelector('.content-card-body').textContent.toLowerCase();
-            const searchLower = searchQuery.toLowerCase();
-            
-            // 搜索匹配
-            const searchMatch = !searchQuery || title.includes(searchLower) || body.includes(searchLower);
-            
-            // 筛选匹配
-            const cardTags = card.dataset.tags ? card.dataset.tags.split(',') : [];
-            const filterMatch = activeFilters.size === 0 || 
-                [...activeFilters].some(tag => cardTags.includes(tag));
-            
-            if (searchMatch && filterMatch) {
-                card.style.display = '';
-                // 高亮搜索文字
-                if (searchQuery) {
-                    const titleEl = card.querySelector('h3');
-                    titleEl.innerHTML = highlightText(titleEl.textContent, searchQuery);
-                }
-                visibleCount++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-        
-        // 更新结果计数
-        const resultCount = document.getElementById('search-result-count');
-        if (resultCount) {
-            resultCount.textContent = `显示 ${visibleCount} / ${cards.length} 条`;
-        }
-    }
-    
     // ===== Tab切换 =====
     function updateTabActive() {
         tabBtns.forEach(btn => {
@@ -431,29 +365,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h2>${ageTitles[currentAge]} · 成长指南</h2>
                 <span class="channel-badge">${channelTitles[currentChannel]}</span>
             </div>
-            
-            <!-- 搜索和筛选区域 -->
-            <div class="search-filter-container">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="content-search" placeholder="搜索内容..." autocomplete="off">
-                    <button class="search-clear" id="clear-search" style="display:none;">×</button>
-                </div>
-                <div class="filter-tags" id="filter-tags">
-                    ${allTags.map(tag => `<button class="filter-tag-btn" data-tag="${tag}">${tag}</button>`).join('')}
-                </div>
-                <div class="search-result-info">
-                    <span id="search-result-count"></span>
-                </div>
-            </div>
         `;
         
         data.cards.forEach(card => {
-            // 提取标签（从标题和内容中简单识别）
-            const tags = extractTags(card);
-            
             html += `
-                <div class="content-card" data-id="${card.id}" data-tags="${tags.join(',')}">
+                <div class="content-card" data-id="${card.id}">
                     <div class="content-card-header">
                         <h3>${card.icon ? card.icon + ' ' : ''}${card.title}</h3>
                         <span class="toggle-icon">▼</span>
@@ -480,73 +396,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (firstCard) {
             firstCard.classList.add('expanded');
         }
-        
-        // 绑定搜索功能
-        const searchInput = document.getElementById('content-search');
-        const clearBtn = document.getElementById('clear-search');
-        
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                searchQuery = this.value.trim();
-                clearBtn.style.display = searchQuery ? 'block' : 'none';
-                filterCards();
-            });
-        }
-        
-        if (clearBtn) {
-            clearBtn.addEventListener('click', function() {
-                searchInput.value = '';
-                searchQuery = '';
-                this.style.display = 'none';
-                filterCards();
-            });
-        }
-        
-        // 绑定筛选标签
-        document.querySelectorAll('.filter-tag-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tag = this.dataset.tag;
-                this.classList.toggle('active');
-                
-                if (activeFilters.has(tag)) {
-                    activeFilters.delete(tag);
-                } else {
-                    activeFilters.add(tag);
-                }
-                
-                filterCards();
-            });
-        });
-        
-        // 初始筛选
-        filterCards();
-    }
-    
-    // 提取卡片标签
-    function extractTags(card) {
-        const tags = [];
-        const content = (card.title + ' ' + (card.content || '')).toLowerCase();
-        
-        const tagKeywords = {
-            '辅食': ['辅食', '米粉', '泥', '添加', '断奶'],
-            '睡眠': ['睡眠', '睡觉', '午睡', '夜醒', '哄睡'],
-            '安全': ['安全', '防护', '危险', '急救'],
-            '早教': ['早教', '智力', '发育', '游戏', '玩具'],
-            '疫苗': ['疫苗', '接种', '预防针'],
-            '疾病': ['发烧', '感冒', '咳嗽', '腹泻', '湿疹', '过敏'],
-            '护理': ['护理', '清洁', '洗澡', '口腔'],
-            '心理': ['心理', '情绪', '分离焦虑'],
-            '运动': ['大动作', '精细动作', '爬', '走', '跑'],
-            '语言': ['语言', '说话', '发音', '沟通']
-        };
-        
-        for (const [tag, keywords] of Object.entries(tagKeywords)) {
-            if (keywords.some(kw => content.includes(kw))) {
-                tags.push(tag);
-            }
-        }
-        
-        return tags;
     }
     
     // ===== 发育里程碑页面内容 =====
@@ -651,8 +500,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button class="gender-btn ${gender === 'girl' ? 'active' : ''}" data-gender="girl">👧 女宝宝</button>
                 </div>
                 <div class="chart-type-toggle">
-                    <button class="chart-type-btn ${chartType === 'height' ? 'active' : ''}" data-type="height">身高曲线</button>
-                    <button class="chart-type-btn ${chartType === 'weight' ? 'active' : ''}" data-type="weight">体重曲线</button>
+                    <button class="chart-type-btn ${chartType === 'height' ? 'active' : ''}" data-ctype="height">📏 身高</button>
+                    <button class="chart-type-btn ${chartType === 'weight' ? 'active' : ''}" data-ctype="weight">⚖️ 体重</button>
                 </div>
             </div>
             
@@ -660,13 +509,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div id="growth-chart" class="chart-wrapper"></div>
             </div>
             
-            <div class="milestone-info">
-                <h4>📊 如何解读生长曲线</h4>
+            <div class="chart-info">
+                <h4>📊 WHO生长标准说明</h4>
                 <ul>
-                    <li>曲线上的线条代表WHO标准百分位（3rd、15th、50th、85th、97th）</li>
-                    <li>您的宝宝数据点越接近50th曲线，表示发育越接近平均水平</li>
-                    <li>持续低于3rd或高于97th曲线建议咨询医生</li>
-                    <li>比起单次测量，连续监测曲线走势更重要</li>
+                    <li><strong>50th (中间线)</strong>：50%的孩子在这个水平</li>
+                    <li><strong>85th / 97th</strong>：高于平均水平</li>
+                    <li><strong>15th / 3rd</strong>：低于平均水平</li>
+                    <li>只要在3rd-97th之间都属于正常范围</li>
+                    <li>观察曲线趋势比单次数值更重要</li>
                 </ul>
             </div>
         `;
@@ -680,14 +530,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.querySelectorAll('.chart-type-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                localStorage.setItem('parenting_chart_type', this.dataset.type);
+                localStorage.setItem('parenting_chart_type', this.dataset.ctype);
                 loadMilestoneChart();
             });
         });
         
-        setTimeout(() => {
-            initGrowthChart(gender, chartType, records);
-        }, 100);
+        // 初始化图表
+        if (typeof initGrowthChart === 'function') {
+            setTimeout(() => {
+                initGrowthChart(gender, chartType, records);
+            }, 100);
+        }
     }
     
     // ===== 观察手记页面内容 =====
@@ -705,148 +558,150 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function loadObservationTimeline() {
         const records = JSON.parse(localStorage.getItem('parenting_observation') || '[]');
-        const filter = localStorage.getItem('parenting_observation_filter') || 'all';
+        const categoryFilter = localStorage.getItem('parenting_obs_category') || 'all';
         
-        const filteredRecords = filter === 'all' ? records : records.filter(r => r.category === filter);
-        const sortedRecords = filteredRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const filteredRecords = categoryFilter === 'all' 
+            ? records 
+            : records.filter(r => r.category === categoryFilter);
         
-        const categoryInfo = {
-            motor: { name: '大动作', icon: '🏃' },
-            sensory: { name: '精细动作', icon: '👋' },
-            language: { name: '语言', icon: '💬' },
-            social: { name: '社交情感', icon: '😊' }
+        const categoryIcons = {
+            motor: { icon: '🏃', name: '大动作' },
+            sensory: { icon: '👀', name: '感官' },
+            language: { icon: '💬', name: '语言' },
+            social: { icon: '👶', name: '社交' }
         };
         
-        milestoneContent.innerHTML = '';
         observationContent.innerHTML = `
-            <div class="milestone-header">
-                <h2>📅 成长时间线</h2>
+            <div class="observation-header-bar">
+                <h2>📝 观察手记</h2>
+                <button class="btn btn-primary" id="add-obs-btn">+ 添加记录</button>
             </div>
             
             <div class="category-filter">
-                <button class="filter-btn ${filter === 'all' ? 'active' : ''}" data-filter="all">全部</button>
-                <button class="filter-btn ${filter === 'motor' ? 'active' : ''}" data-filter="motor">🏃 大动作</button>
-                <button class="filter-btn ${filter === 'sensory' ? 'active' : ''}" data-filter="sensory">👋 精细动作</button>
-                <button class="filter-btn ${filter === 'language' ? 'active' : ''}" data-filter="language">💬 语言</button>
-                <button class="filter-btn ${filter === 'social' ? 'active' : ''}" data-filter="social">😊 社交情感</button>
+                <button class="filter-btn ${categoryFilter === 'all' ? 'active' : ''}" data-cat="all">全部</button>
+                ${Object.entries(categoryIcons).map(([key, val]) => `
+                    <button class="filter-btn ${categoryFilter === key ? 'active' : ''}" data-cat="${key}">${val.icon} ${val.name}</button>
+                `).join('')}
             </div>
             
-            ${sortedRecords.length > 0 ? `
-                <div class="observation-timeline">
-                    ${sortedRecords.map((r, i) => `
+            <div class="observation-timeline">
+                ${filteredRecords.length > 0 ? filteredRecords.map((r, i) => {
+                    const catInfo = categoryIcons[r.category] || { icon: '📌', name: r.category };
+                    const originalIndex = records.indexOf(r);
+                    return `
                         <div class="observation-item ${r.category}">
                             <div class="observation-header">
-                                <span class="observation-category">
-                                    ${categoryInfo[r.category]?.icon || '📝'} ${categoryInfo[r.category]?.name || r.category}
-                                </span>
+                                <span class="observation-category">${catInfo.icon} ${catInfo.name}</span>
                                 <span class="observation-date">${r.date}</span>
                             </div>
-                            <h4 class="observation-title">${r.title}</h4>
-                            <p class="observation-desc">${r.description}</p>
+                            <h3 class="observation-title">${r.title}</h3>
+                            ${r.description ? `<p class="observation-desc">${r.description}</p>` : ''}
                             <div class="observation-actions">
-                                <button class="edit-btn" onclick="editObservation(${i})">编辑</button>
-                                <button class="delete-btn" onclick="deleteObservation(${i})">删除</button>
+                                <button class="edit-btn" onclick="editObservation(${originalIndex})">编辑</button>
+                                <button class="delete-btn" onclick="deleteObservation(${originalIndex})">删除</button>
                             </div>
                         </div>
-                    `).join('')}
-                </div>
-            ` : `
-                <div class="no-record">
-                    <p>暂无观察记录</p>
-                    <p style="margin-top: 0.5rem; font-size: 0.85rem;">点击上方「添加记录」开始记录宝宝的成长瞬间~</p>
-                </div>
-            `}
-            
-            <div class="milestone-info">
-                <h4>💡 里程碑参考</h4>
-                <ul>
-                    <li><strong>1-2月</strong>：俯卧抬头、追视人脸、发出咕咕声</li>
-                    <li><strong>3-4月</strong>：竖头稳、翻身、笑出声、认妈妈</li>
-                    <li><strong>5-6月</strong>：独坐片刻、伸手抓物、咿呀学语</li>
-                    <li><strong>7-9月</strong>：爬行、扶站、叫爸爸妈妈</li>
-                    <li><strong>10-12月</strong>：独站、扶走、理解简单指令</li>
-                    <li><strong>1-2岁</strong>：独立行走、说单词、搭积木</li>
-                    <li><strong>2-3岁</strong>：跑跳、说短句、社交游戏</li>
-                </ul>
+                    `;
+                }).join('') : '<div class="no-record">暂无观察记录，记录宝宝成长的每个精彩瞬间吧~</div>'}
             </div>
         `;
         
-        document.querySelectorAll('.filter-btn').forEach(btn => {
+        document.getElementById('add-obs-btn').addEventListener('click', function() {
+            currentObservationTab = 'add';
+            loadObservationContent();
+        });
+        
+        document.querySelectorAll('.filter-btn[data-cat]').forEach(btn => {
             btn.addEventListener('click', function() {
-                localStorage.setItem('parenting_observation_filter', this.dataset.filter);
+                localStorage.setItem('parenting_obs_category', this.dataset.cat);
                 loadObservationTimeline();
             });
         });
     }
     
-    function loadAddObservation(isEdit = false, editIndex = null) {
-        const categoryInfo = {
-            motor: { name: '大动作', icon: '🏃' },
-            sensory: { name: '精细动作', icon: '👋' },
-            language: { name: '语言', icon: '💬' },
-            social: { name: '社交情感', icon: '😊' }
-        };
+    function loadAddObservation(isEdit, editIndex) {
+        let formHtml = '';
         
-        let editData = {};
-        if (isEdit && editIndex !== null) {
+        if (isEdit) {
             const records = JSON.parse(localStorage.getItem('parenting_observation') || '[]');
-            editData = records[editIndex] || {};
+            const record = records[editIndex];
+            formHtml = `<input type="hidden" id="edit-index" value="${editIndex}">`;
+            if (record) {
+                formHtml += `
+                    <div class="form-section">
+                        <h4>📅 日期</h4>
+                        <input type="date" id="obs-date" class="form-input" value="${record.date}" required>
+                    </div>
+                `;
+            }
+        } else {
+            formHtml = `
+                <div class="form-section">
+                    <h4>📅 日期</h4>
+                    <input type="date" id="obs-date" class="form-input" value="${new Date().toISOString().split('T')[0]}" required>
+                </div>
+            `;
         }
         
-        milestoneContent.innerHTML = '';
         observationContent.innerHTML = `
-            <div class="milestone-header">
-                <h2>${isEdit ? '✏️ 编辑记录' : '➕ 添加新记录'}</h2>
+            <div class="add-observation-header">
+                <button class="back-link" id="back-to-timeline">← 返回列表</button>
+                <h2>${isEdit ? '✏️ 编辑记录' : '📝 添加新记录'}</h2>
             </div>
             
-            <div class="add-observation-form">
-                <form id="observation-form">
-                    ${isEdit ? `<input type="hidden" id="edit-index" value="${editIndex}">` : ''}
-                    
-                    <div class="form-section">
-                        <h4>选择类别</h4>
-                        <div class="category-options">
-                            <div class="category-option ${editData.category === 'motor' ? 'selected' : ''}" data-category="motor">
-                                <div class="cat-icon">🏃</div>
-                                <div class="cat-name">大动作</div>
-                            </div>
-                            <div class="category-option ${editData.category === 'sensory' ? 'selected' : ''}" data-category="sensory">
-                                <div class="cat-icon">👋</div>
-                                <div class="cat-name">精细动作</div>
-                            </div>
-                            <div class="category-option ${editData.category === 'language' ? 'selected' : ''}" data-category="language">
-                                <div class="cat-icon">💬</div>
-                                <div class="cat-name">语言</div>
-                            </div>
-                            <div class="category-option ${editData.category === 'social' ? 'selected' : ''}" data-category="social">
-                                <div class="cat-icon">😊</div>
-                                <div class="cat-name">社交情感</div>
-                            </div>
+            <form id="add-obs-form" class="add-observation-form">
+                ${formHtml}
+                <div class="form-section">
+                    <h4>📂 类别</h4>
+                    <div class="category-options" id="category-options">
+                        <div class="category-option" data-category="motor">
+                            <span class="cat-icon">🏃</span>
+                            <span class="cat-name">大动作</span>
                         </div>
-                        <input type="hidden" id="obs-category" value="${editData.category || 'motor'}">
-                    </div>
-                    
-                    <div class="form-section">
-                        <h4>记录信息</h4>
-                        <div class="form-group">
-                            <label>发生日期</label>
-                            <input type="date" id="obs-date" required value="${editData.date || new Date().toISOString().split('T')[0]}">
+                        <div class="category-option" data-category="sensory">
+                            <span class="cat-icon">👀</span>
+                            <span class="cat-name">感官</span>
                         </div>
-                        <div class="form-group">
-                            <label>里程碑标题</label>
-                            <input type="text" id="obs-title" required placeholder="如：第一次翻身、叫妈妈" value="${editData.title || ''}">
+                        <div class="category-option" data-category="language">
+                            <span class="cat-icon">💬</span>
+                            <span class="cat-name">语言</span>
                         </div>
-                        <div class="form-group">
-                            <label>详细描述</label>
-                            <textarea id="obs-desc" class="form-textarea" placeholder="记录当时的情景、宝宝的表现等...">${editData.description || ''}</textarea>
+                        <div class="category-option" data-category="social">
+                            <span class="cat-icon">👶</span>
+                            <span class="cat-name">社交</span>
                         </div>
                     </div>
-                    
-                    <button type="submit" class="btn btn-primary">${isEdit ? '保存修改' : '保存记录'}</button>
-                    ${isEdit ? '<button type="button" class="btn btn-secondary" onclick="showObservationPage()">取消</button>' : ''}
-                </form>
-            </div>
+                    <input type="hidden" id="obs-category" value="">
+                </div>
+                
+                <div class="form-section">
+                    <h4>📌 标题</h4>
+                    <input type="text" id="obs-title" class="form-input" placeholder="如：第一次翻身" required>
+                </div>
+                
+                <div class="form-section">
+                    <h4>📝 描述（可选）</h4>
+                    <textarea id="obs-desc" class="form-textarea" placeholder="记录更多细节..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">保存记录</button>
+            </form>
         `;
+        
+        if (isEdit) {
+            const records = JSON.parse(localStorage.getItem('parenting_observation') || '[]');
+            const record = records[editIndex];
+            if (record) {
+                document.getElementById('obs-category').value = record.category;
+                document.getElementById('obs-title').value = record.title;
+                document.getElementById('obs-desc').value = record.description || '';
+                
+                const catOption = document.querySelector(`.category-option[data-category="${record.category}"]`);
+                if (catOption) catOption.classList.add('selected');
+            }
+        }
+        
+        document.getElementById('back-to-timeline').addEventListener('click', showObservationPage);
         
         document.querySelectorAll('.category-option').forEach(opt => {
             opt.addEventListener('click', function() {
@@ -856,236 +711,189 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        document.getElementById('observation-form').addEventListener('submit', saveObservation);
+        document.getElementById('add-obs-form').addEventListener('submit', saveObservation);
     }
-
+    
     // ===== 喂养记录页面内容 =====
     function loadFeedingRecordContent() {
         if (currentFeedingRecordTab === 'record') {
             loadFeedingRecordForm();
         } else if (currentFeedingRecordTab === 'stats') {
-            loadFeedingStats();
+            loadFeedingRecordStats();
         }
-
+        
         document.querySelectorAll('[data-frtab]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.frtab === currentFeedingRecordTab);
         });
     }
-
+    
     function loadFeedingRecordForm() {
         const records = JSON.parse(localStorage.getItem('parenting_feeding') || '[]');
-        const today = new Date().toISOString().split('T')[0];
-        const todayRecords = records.filter(r => r.date === today);
-        const now = new Date();
-        const timeNow = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-
+        
         feedingRecordContent.innerHTML = `
-            <div class="milestone-header">
+            <div class="feeding-record-header">
                 <h2>🍼 喂养记录</h2>
+                <button class="btn btn-primary" id="add-fr-btn">+ 添加记录</button>
             </div>
-
+            
             <div class="record-form">
-                <h3 class="form-title">✏️ 记录一次喂养</h3>
+                <h3 class="form-title">✏️ 添加喂养记录</h3>
                 <form id="feeding-form">
                     <div class="form-row">
                         <div class="form-group">
                             <label>日期</label>
-                            <input type="date" id="fr-date" required value="${today}">
+                            <input type="date" id="fr-date" required value="${new Date().toISOString().split('T')[0]}">
                         </div>
                         <div class="form-group">
                             <label>时间</label>
-                            <input type="time" id="fr-time" required value="${timeNow}">
+                            <input type="time" id="fr-time" required value="${new Date().toTimeString().slice(0,5)}">
                         </div>
                     </div>
-
-                    <div class="form-section">
-                        <h4>喂养类型</h4>
-                        <div class="category-options">
-                            <div class="category-option selected" data-fdtype="breast">
-                                <div class="cat-icon">🤱</div>
-                                <div class="cat-name">母乳</div>
-                            </div>
-                            <div class="category-option" data-fdtype="formula">
-                                <div class="cat-icon">🍼</div>
-                                <div class="cat-name">配方奶</div>
-                            </div>
-                            <div class="category-option" data-fdtype="solid">
-                                <div class="cat-icon">🥄</div>
-                                <div class="cat-name">辅食</div>
-                            </div>
-                            <div class="category-option" data-fdtype="water">
-                                <div class="cat-icon">💧</div>
-                                <div class="cat-name">水</div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="fr-type" value="breast">
+                    <div class="form-group">
+                        <label>喂养类型</label>
+                        <select id="fr-type" required>
+                            <option value="breast">🤱 母乳</option>
+                            <option value="formula">🍼 配方奶</option>
+                            <option value="solid">🥄 辅食</option>
+                            <option value="water">💧 补水</option>
+                        </select>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group" id="amount-group">
-                            <label>奶量 (ml)</label>
-                            <input type="number" id="fr-amount" min="0" max="500" placeholder="如：120">
-                        </div>
-                        <div class="form-group" id="duration-group" style="display:none;">
-                            <label>时长 (分钟)</label>
-                            <input type="number" id="fr-duration" min="1" max="60" placeholder="如：15">
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="side-group">
-                        <label>吃哪侧</label>
+                    <div class="form-group breast-field">
+                        <label>喂养侧</label>
                         <select id="fr-side">
                             <option value="left">左侧</option>
                             <option value="right">右侧</option>
                             <option value="both">双侧</option>
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <label>备注</label>
-                        <textarea id="fr-note" class="form-textarea" placeholder="可选：记录宝宝吃奶情况"></textarea>
+                    <div class="form-group formula-field">
+                        <label>奶量 (ml)</label>
+                        <input type="number" id="fr-amount" placeholder="如：120">
                     </div>
-
+                    <div class="form-group breast-field">
+                        <label>时长 (分钟，可选)</label>
+                        <input type="number" id="fr-duration" placeholder="如：15">
+                    </div>
+                    <div class="form-group">
+                        <label>备注 (可选)</label>
+                        <input type="text" id="fr-note" placeholder="补充说明...">
+                    </div>
                     <button type="submit" class="btn btn-primary">保存记录</button>
                 </form>
             </div>
-
-            ${todayRecords.length > 0 ? `
-                <div class="record-list">
-                    <h3>📋 今日记录 (${todayRecords.length}条)</h3>
-                    ${todayRecords.map((r, i) => {
-                        const realIndex = records.length - 1 - records.reverse().findIndex(rec => 
-                            rec.date === r.date && rec.time === r.time && rec.type === r.type
-                        );
-                        return `
-                            <div class="record-item">
-                                <div class="record-info">
-                                    <span class="date">${r.time}</span>
-                                    <span>${feedingTypes[r.type]?.icon || '🍴'} ${feedingTypes[r.type]?.name || r.type}</span>
-                                    ${r.amount ? `<span>${r.amount}ml</span>` : ''}
-                                    ${r.duration ? `<span>${r.duration}分钟</span>` : ''}
-                                    ${r.side ? `<span>${r.side === 'left' ? '左侧' : r.side === 'right' ? '右侧' : '双侧'}</span>` : ''}
-                                </div>
-                                <div class="record-actions">
-                                    <button class="delete-btn" onclick="deleteFeedingRecord(${realIndex})">删除</button>
-                                </div>
+            
+            <div class="record-list">
+                <h3>📋 最近记录</h3>
+                ${records.length > 0 ? records.slice(-10).reverse().map((r, i) => {
+                    const typeInfo = feedingTypes[r.type] || { name: r.type, icon: '📌' };
+                    return `
+                        <div class="record-item">
+                            <div class="record-info">
+                                <span class="date">${r.date} ${r.time}</span>
+                                <span>${typeInfo.icon} ${typeInfo.name}</span>
+                                ${r.amount ? `<span>${r.amount} ml</span>` : ''}
+                                ${r.duration ? `<span>${r.duration} 分钟</span>` : ''}
+                                ${r.side ? `<span>${r.side === 'left' ? '左侧' : r.side === 'right' ? '右侧' : '双侧'}</span>` : ''}
+                                ${r.note ? `<span class="note">${r.note}</span>` : ''}
                             </div>
-                        `;
-                    }).join('')}
-                </div>
-            ` : `
-                <div class="no-record">今日暂无喂养记录</div>
-            `}
+                            <div class="record-actions">
+                                <button class="delete-btn" onclick="deleteFeedingRecord(${records.length - 1 - i})">删除</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('') : '<div class="no-record">暂无喂养记录</div>'}
+            </div>
         `;
-
-        // 绑定表单事件
-        document.querySelectorAll('[data-fdtype]').forEach(opt => {
-            opt.addEventListener('click', function() {
-                document.querySelectorAll('[data-fdtype]').forEach(o => o.classList.remove('selected'));
-                this.classList.add('selected');
-                const type = this.dataset.fdtype;
-                document.getElementById('fr-type').value = type;
-                
-                // 显示/隐藏相关字段
-                const amountGroup = document.getElementById('amount-group');
-                const durationGroup = document.getElementById('duration-group');
-                const sideGroup = document.getElementById('side-group');
-                
-                if (type === 'breast') {
-                    amountGroup.style.display = 'none';
-                    durationGroup.style.display = '';
-                    sideGroup.style.display = '';
-                } else {
-                    amountGroup.style.display = '';
-                    durationGroup.style.display = 'none';
-                    sideGroup.style.display = 'none';
-                }
-            });
-        });
-
+        
         document.getElementById('feeding-form').addEventListener('submit', saveFeedingRecord);
+        
+        // 根据类型显示/隐藏字段
+        const typeSelect = document.getElementById('fr-type');
+        const breastFields = document.querySelectorAll('.breast-field');
+        const formulaFields = document.querySelectorAll('.formula-field');
+        
+        function updateFields() {
+            const type = typeSelect.value;
+            breastFields.forEach(f => f.style.display = type === 'breast' ? 'block' : 'none');
+            formulaFields.forEach(f => f.style.display = type === 'formula' ? 'block' : 'none');
+        }
+        
+        typeSelect.addEventListener('change', updateFields);
+        updateFields();
     }
-
-    function loadFeedingStats() {
+    
+    function loadFeedingRecordStats() {
         const records = JSON.parse(localStorage.getItem('parenting_feeding') || '[]');
-        const today = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         
-        const todayRecords = records.filter(r => r.date === today);
-        const todayFeedingCount = todayRecords.length;
-        const todayMilkTotal = todayRecords.filter(r => r.amount).reduce((sum, r) => sum + parseInt(r.amount), 0);
+        const todayRecords = records.filter(r => r.date === todayStr);
+        const weekRecords = records.filter(r => r.date >= weekAgo);
         
-        const weekRecords = records.filter(r => {
-            const date = new Date(r.date);
-            const now = new Date();
-            const weekAgo = new Date(now.setDate(now.getDate() - 7));
-            return date >= weekAgo;
-        });
-        const weekAvg = Math.round(weekRecords.length / 7);
-
+        const todayFeeds = todayRecords.filter(r => ['breast', 'formula'].includes(r.type)).length;
+        const todaySolid = todayRecords.filter(r => r.type === 'solid').length;
+        const weekAvg = (weekRecords.filter(r => ['breast', 'formula'].includes(r.type)).length / 7).toFixed(1);
+        
         feedingRecordContent.innerHTML = `
-            <div class="milestone-header">
+            <div class="stats-header">
                 <h2>📊 喂养统计</h2>
             </div>
-
+            
             <div class="stats-grid">
                 <div class="stats-card">
-                    <div class="stats-value">${todayFeedingCount}</div>
-                    <div class="stats-label">今日喂养次数</div>
+                    <div class="stats-value">${todayFeeds}</div>
+                    <div class="stats-label">今日奶量次数</div>
                 </div>
                 <div class="stats-card">
-                    <div class="stats-value">${todayMilkTotal}</div>
-                    <div class="stats-label">今日奶量 (ml)</div>
+                    <div class="stats-value">${todaySolid}</div>
+                    <div class="stats-label">今日辅食次数</div>
                 </div>
                 <div class="stats-card">
                     <div class="stats-value">${weekAvg}</div>
-                    <div class="stats-label">近7日平均次数</div>
+                    <div class="stats-label">近7天日均</div>
                 </div>
                 <div class="stats-card">
                     <div class="stats-value">${records.length}</div>
                     <div class="stats-label">总记录数</div>
                 </div>
             </div>
-
-            <div class="milestone-info">
-                <h4>💡 喂养小贴士</h4>
-                <ul>
-                    <li>新生儿按需喂养，通常每天8-12次</li>
-                    <li>1-2月龄可逐渐建立规律喂养</li>
-                    <li>母乳宝宝不必纠结奶量，看尿布判断</li>
-                    <li>定期记录有助于发现喂养规律</li>
-                </ul>
+            
+            <div class="stats-summary">
+                <h4>📝 周报摘要</h4>
+                <p>本周共记录 ${weekRecords.length} 条喂养信息</p>
             </div>
         `;
     }
-
+    
     // ===== 睡眠日志页面内容 =====
     function loadSleepLogContent() {
         if (currentSleepLogTab === 'record') {
             loadSleepRecordForm();
         } else if (currentSleepLogTab === 'stats') {
-            loadSleepStats();
+            loadSleepRecordStats();
         }
-
+        
         document.querySelectorAll('[data-sltab]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.sltab === currentSleepLogTab);
         });
     }
-
+    
     function loadSleepRecordForm() {
         const records = JSON.parse(localStorage.getItem('parenting_sleep') || '[]');
-        const today = new Date().toISOString().split('T')[0];
-
+        
         sleepLogContent.innerHTML = `
-            <div class="milestone-header">
-                <h2>🌙 睡眠日志</h2>
+            <div class="sleep-log-header">
+                <h2>😴 睡眠日志</h2>
+                <button class="btn btn-primary" id="add-sl-btn">+ 添加记录</button>
             </div>
-
+            
             <div class="record-form">
-                <h3 class="form-title">✏️ 记录睡眠</h3>
+                <h3 class="form-title">✏️ 添加睡眠记录</h3>
                 <form id="sleep-form">
                     <div class="form-group">
                         <label>日期</label>
-                        <input type="date" id="sl-date" required value="${today}">
+                        <input type="date" id="sl-date" required value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -1099,118 +907,99 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="form-group">
                         <label>睡眠质量</label>
-                        <div class="category-options">
-                            <div class="category-option" data-quality="good">
-                                <div class="cat-icon">😊</div>
-                                <div class="cat-name">睡得好</div>
-                            </div>
-                            <div class="category-option selected" data-quality="normal">
-                                <div class="cat-icon">😐</div>
-                                <div class="cat-name">一般</div>
-                            </div>
-                            <div class="category-option" data-quality="bad">
-                                <div class="cat-icon">😔</div>
-                                <div class="cat-name">睡不好</div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="sl-quality" value="normal">
+                        <select id="sl-quality" required>
+                            <option value="good">😊 睡得好</option>
+                            <option value="normal">😐 一般</option>
+                            <option value="bad">😔 睡不好</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>备注</label>
-                        <textarea id="sl-note" class="form-textarea" placeholder="可选：记录特殊情况"></textarea>
+                        <label>备注 (可选)</label>
+                        <input type="text" id="sl-note" placeholder="补充说明...">
                     </div>
                     <button type="submit" class="btn btn-primary">保存记录</button>
                 </form>
             </div>
-
+            
             <div class="record-list">
                 <h3>📋 最近记录</h3>
                 ${records.length > 0 ? records.slice(-10).reverse().map((r, i) => {
-                    const realIndex = records.length - 1 - i;
+                    const qualityInfo = sleepQualities[r.quality] || { name: r.quality, icon: '📌' };
                     return `
                         <div class="record-item">
                             <div class="record-info">
                                 <span class="date">${r.date}</span>
                                 <span>${r.bedTime} - ${r.wakeTime}</span>
-                                <span>${sleepQualities[r.quality]?.icon || '😊'} ${sleepQualities[r.quality]?.name || r.quality}</span>
+                                <span>${qualityInfo.icon} ${qualityInfo.name}</span>
+                                ${r.note ? `<span class="note">${r.note}</span>` : ''}
                             </div>
                             <div class="record-actions">
-                                <button class="delete-btn" onclick="deleteSleepRecord(${realIndex})">删除</button>
+                                <button class="delete-btn" onclick="deleteSleepRecord(${records.length - 1 - i})">删除</button>
                             </div>
                         </div>
                     `;
                 }).join('') : '<div class="no-record">暂无睡眠记录</div>'}
             </div>
         `;
-
-        document.querySelectorAll('[data-quality]').forEach(opt => {
-            opt.addEventListener('click', function() {
-                document.querySelectorAll('[data-quality]').forEach(o => o.classList.remove('selected'));
-                this.classList.add('selected');
-                document.getElementById('sl-quality').value = this.dataset.quality;
-            });
-        });
-
+        
         document.getElementById('sleep-form').addEventListener('submit', saveSleepRecord);
     }
-
-    function loadSleepStats() {
+    
+    function loadSleepRecordStats() {
         const records = JSON.parse(localStorage.getItem('parenting_sleep') || '[]');
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         
-        const avgSleepTime = records.length > 0 ? Math.round(
-            records.reduce((sum, r) => {
-                const [bh, bm] = r.bedTime.split(':').map(Number);
-                const [wh, wm] = r.wakeTime.split(':').map(Number);
-                const bedMins = bh * 60 + bm;
-                let wakeMins = wh * 60 + wm;
-                if (wakeMins < bedMins) wakeMins += 24 * 60;
-                return sum + (wakeMins - bedMins);
-            }, 0) / records.length / 60 * 10
-        ) / 10 : 0;
-
-        const qualityStats = {
-            good: records.filter(r => r.quality === 'good').length,
-            normal: records.filter(r => r.quality === 'normal').length,
-            bad: records.filter(r => r.quality === 'bad').length
-        };
-
+        const todayRecord = records.find(r => r.date === todayStr);
+        const weekRecords = records.filter(r => r.date >= weekAgo);
+        
+        let todaySleepHours = 0;
+        if (todayRecord) {
+            const bed = todayRecord.bedTime.split(':').map(Number);
+            const wake = todayRecord.wakeTime.split(':').map(Number);
+            let diff = wake[0] * 60 + wake[1] - (bed[0] * 60 + bed[1]);
+            if (diff < 0) diff += 24 * 60;
+            todaySleepHours = (diff / 60).toFixed(1);
+        }
+        
+        const weekGoodCount = weekRecords.filter(r => r.quality === 'good').length;
+        
         sleepLogContent.innerHTML = `
-            <div class="milestone-header">
+            <div class="stats-header">
                 <h2>📊 睡眠统计</h2>
             </div>
-
+            
             <div class="stats-grid">
                 <div class="stats-card">
-                    <div class="stats-value">${avgSleepTime}</div>
-                    <div class="stats-label">平均睡眠 (小时)</div>
+                    <div class="stats-value">${todaySleepHours || '--'}</div>
+                    <div class="stats-label">今日睡眠(小时)</div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-value">${weekRecords.length}</div>
+                    <div class="stats-label">本周记录数</div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-value">${weekGoodCount}</div>
+                    <div class="stats-label">睡眠良好</div>
                 </div>
                 <div class="stats-card">
                     <div class="stats-value">${records.length}</div>
                     <div class="stats-label">总记录数</div>
                 </div>
             </div>
-
-            <div class="milestone-info">
-                <h4>📈 睡眠质量分布</h4>
+            
+            <div class="sleep-tips">
+                <h4>😴 婴儿睡眠参考</h4>
                 <ul>
-                    <li>😊 睡得好：${qualityStats.good}次</li>
-                    <li>😐 一般：${qualityStats.normal}次</li>
-                    <li>😔 睡不好：${qualityStats.bad}次</li>
-                </ul>
-            </div>
-
-            <div class="milestone-info">
-                <h4>💡 各月龄睡眠参考</h4>
-                <ul>
-                    <li><strong>0-3月</strong>：每天14-17小时</li>
-                    <li><strong>4-12月</strong>：每天12-15小时</li>
-                    <li><strong>1-2岁</strong>：每天11-14小时（含午睡）</li>
-                    <li><strong>2-3岁</strong>：每天10-13小时（含午睡）</li>
+                    <li>0-3个月：每天14-17小时</li>
+                    <li>4-11个月：每天12-15小时</li>
+                    <li>1-2岁：每天11-14小时</li>
                 </ul>
             </div>
         `;
     }
-
+    
     // ===== 数据管理页面内容 =====
     function loadDataManageContent() {
         if (currentDataManageTab === 'export') {
@@ -1218,57 +1007,92 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (currentDataManageTab === 'import') {
             loadImportPage();
         }
-
+        
         document.querySelectorAll('[data-dmtab]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.dmtab === currentDataManageTab);
         });
     }
-
+    
     function loadExportPage() {
+        const records = {
+            heightWeight: JSON.parse(localStorage.getItem('parenting_height_weight') || '[]').length,
+            observation: JSON.parse(localStorage.getItem('parenting_observation') || '[]').length,
+            feeding: JSON.parse(localStorage.getItem('parenting_feeding') || '[]').length,
+            sleep: JSON.parse(localStorage.getItem('parenting_sleep') || '[]').length
+        };
+        
         dataManageContent.innerHTML = `
-            <div class="milestone-header">
-                <h2>📤 数据导出</h2>
+            <div class="data-manage-header">
+                <h2>💾 数据备份</h2>
             </div>
-
-            <div class="record-form">
-                <h3 class="form-title">📥 备份所有数据</h3>
-                <p style="color: var(--color-text-light); margin-bottom: 1rem; font-size: 0.9rem;">
-                    将您的所有记录导出为JSON文件，方便保存和迁移。
-                </p>
-                <button class="btn btn-primary" onclick="exportAllData()">📤 导出数据</button>
+            
+            <div class="data-summary">
+                <h3>📊 当前数据概览</h3>
+                <div class="data-stats">
+                    <div class="data-stat-item">
+                        <span class="data-stat-label">身高体重记录</span>
+                        <span class="data-stat-value">${records.heightWeight} 条</span>
+                    </div>
+                    <div class="data-stat-item">
+                        <span class="data-stat-label">观察手记</span>
+                        <span class="data-stat-value">${records.observation} 条</span>
+                    </div>
+                    <div class="data-stat-item">
+                        <span class="data-stat-label">喂养记录</span>
+                        <span class="data-stat-value">${records.feeding} 条</span>
+                    </div>
+                    <div class="data-stat-item">
+                        <span class="data-stat-label">睡眠日志</span>
+                        <span class="data-stat-value">${records.sleep} 条</span>
+                    </div>
+                </div>
             </div>
-
-            <div class="milestone-info">
-                <h4>💡 数据备份建议</h4>
-                <ul>
-                    <li>建议每周导出一次备份，养成习惯</li>
-                    <li>重要数据更新后及时导出</li>
-                    <li>导出文件保存在安全的地方（云盘/电脑）</li>
-                    <li>更换手机或浏览器前务必先导出</li>
-                </ul>
+            
+            <div class="export-section">
+                <h3>📤 导出备份</h3>
+                <p class="export-desc">将所有育儿数据导出为JSON文件，方便备份或迁移到其他设备。</p>
+                <button class="btn btn-primary" onclick="exportAllData()">📥 导出所有数据</button>
+            </div>
+            
+            <div class="import-section">
+                <h3>📥 导入数据</h3>
+                <p class="import-desc">从备份文件恢复数据，支持导入在其他设备导出的数据。</p>
+                <button class="btn btn-secondary" id="go-import-btn">前往导入页面</button>
             </div>
         `;
+        
+        document.getElementById('go-import-btn').addEventListener('click', function() {
+            currentDataManageTab = 'import';
+            loadDataManageContent();
+        });
     }
-
+    
     function loadImportPage() {
         dataManageContent.innerHTML = `
-            <div class="milestone-header">
-                <h2>📥 导入恢复</h2>
+            <div class="data-manage-header">
+                <h2>📥 数据导入</h2>
             </div>
-
-            <div class="record-form">
-                <h3 class="form-title">📂 选择备份文件</h3>
-                <p style="color: var(--color-text-light); margin-bottom: 1rem; font-size: 0.9rem;">
-                    选择之前导出的 JSON 文件，恢复所有数据。
-                </p>
-                <div class="form-group">
-                    <label>选择文件</label>
-                    <input type="file" id="import-file" accept=".json" style="padding: 0.5rem;">
-                </div>
-                <button class="btn btn-primary" onclick="importAllData()">📤 导入数据</button>
+            
+            <div class="import-upload">
+                <h3>📁 选择备份文件</h3>
+                <input type="file" id="import-file" accept=".json" class="file-input">
+                <p class="import-tip">支持 .json 格式的备份文件</p>
             </div>
-
-            <div class="record-form" style="margin-top:1.5rem; border: 2px solid #FFCDD2;">
+            
+            <div class="import-action">
+                <button class="btn btn-primary" onclick="importAllData()">导入数据</button>
+            </div>
+            
+            <div class="import-warning">
+                <h3 class="warning-title">⚠️ 注意事项</h3>
+                <ul>
+                    <li>导入将合并现有数据，不会覆盖</li>
+                    <li>如果数据重复，需要手动去重</li>
+                    <li>建议导入前先导出当前数据作为备份</li>
+                </ul>
+            </div>
+            
+            <div class="data-danger-zone">
                 <h3 class="form-title" style="color: #E57373;">⚠️ 危险操作</h3>
                 <p style="color: var(--color-text-light); margin-bottom: 1rem; font-size: 0.9rem;">
                     清除所有数据不可恢复，请确保已先导出备份！
@@ -1458,7 +1282,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const exportObj = {
             app: '宝贝成长指南',
-            version: '2.0',
+            version: '3.0',
             exportDate: new Date().toISOString(),
             data: allData
         };
@@ -1749,7 +1573,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     };
     
-    console.log('🌟 宝贝成长指南 v2.0 已加载（返回键优化、月龄限制、搜索筛选）');
+    console.log('🌟 宝贝成长指南 v3.0 已加载（返回键优化、月龄限制、均衡型布局）');
 });
 
 // ===== 生长曲线图表初始化 =====
