@@ -18,7 +18,8 @@
             <div class="header-auth">
                 <button id="login-trigger" class="auth-trigger-btn" onclick="openAuthModal()">🔐 登录 / 注册</button>
                 <div id="user-info" class="user-info" style="display:none">
-                    <span class="user-email"></span>
+                    <span class="user-baby-name"></span>
+                    <button class="switch-baby-btn" onclick="openBabyModal()">切换宝宝</button>
                     <button class="logout-btn" onclick="signOutUser()">退出</button>
                 </div>
             </div>
@@ -65,6 +66,58 @@
         </div>
     </div>
 
+    <!-- 宝宝资料弹窗（首次添加/编辑） -->
+    <div id="baby-modal" class="auth-modal" style="display:none">
+        <div class="auth-modal-content">
+            <button class="auth-close-btn" onclick="closeBabyModal()">✕</button>
+            <h2 id="baby-modal-title">添加宝宝</h2>
+            <p class="auth-subtitle" id="baby-modal-subtitle">记录宝宝信息，获取专属成长建议</p>
+            
+            <form id="baby-form" onsubmit="handleBabySubmit(event)">
+                <input type="hidden" id="baby-id">
+                <div class="form-group">
+                    <label>宝宝小名</label>
+                    <input type="text" id="baby-name" placeholder="如：小豆包" required>
+                </div>
+                <div class="form-group">
+                    <label>性别</label>
+                    <select id="baby-gender">
+                        <option value="boy">👦 男宝宝</option>
+                        <option value="girl">👧 女宝宝</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>出生日期</label>
+                    <input type="date" id="baby-birth-date" required>
+                </div>
+                <button type="submit" class="btn btn-primary auth-submit-btn" id="baby-submit-btn">保存</button>
+            </form>
+            
+            <div id="baby-modal-message" class="auth-message" style="display:none"></div>
+        </div>
+    </div>
+
+    <!-- 宝宝资料管理页面 -->
+    <main id="baby-profile-page" class="page baby-profile-page">
+        <div class="content-wrapper">
+            <aside class="channel-tabs">
+                <button class="back-btn" id="back-from-baby">← 返回首页</button>
+                <h3 class="current-age">👶 宝宝资料</h3>
+                <nav class="tabs-nav">
+                    <button class="tab-btn active" data-bptab="list">
+                        <span class="tab-icon">📋</span>
+                        <span class="tab-name">宝宝列表</span>
+                    </button>
+                    <button class="tab-btn" data-bptab="add">
+                        <span class="tab-icon">➕</span>
+                        <span class="tab-name">添加宝宝</span>
+                    </button>
+                </nav>
+            </aside>
+            <section class="content-area" id="baby-profile-content"></section>
+        </div>
+    </main>
+
     <!-- 首页：月龄选择 -->
     <main id="home-page" class="page home-page active">
         <section class="age-selection">
@@ -106,6 +159,11 @@
         <section class="tools-section">
             <h2 class="section-title">🛠️ 成长记录工具</h2>
             <div class="tools-grid">
+                <div class="tool-card baby-profile" id="go-baby-profile">
+                    <div class="tool-icon">👶</div>
+                    <h3>宝宝资料</h3>
+                    <p>管理宝宝信息，切换当前宝宝</p>
+                </div>
                 <div class="tool-card milestone" id="go-milestone">
                     <div class="tool-icon">📊</div>
                     <h3>发育里程碑</h3>
